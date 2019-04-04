@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: greeting-service
+server:
+  port: 0
+
+service-discovery.admin.address: http://localhost:9000

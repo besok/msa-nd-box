@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: service-discovery
+server:
+  port: 9000
