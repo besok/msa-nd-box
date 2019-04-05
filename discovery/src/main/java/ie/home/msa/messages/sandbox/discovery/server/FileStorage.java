@@ -1,5 +1,6 @@
 package ie.home.msa.messages.sandbox.discovery.server;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -18,11 +19,16 @@ import static java.nio.file.StandardOpenOption.*;
 
 
 @Service
+@Slf4j
 public class FileStorage {
 
     private Path store;
     private ConcurrentMap<String, String> memory;
     private Lock lock;
+
+    public Path store() {
+        return store;
+    }
 
     public FileStorage() {
         lock = new ReentrantLock();
@@ -32,26 +38,26 @@ public class FileStorage {
     public boolean put(String service, String address) {
         String addr = memory.put(service, address);
         Path file = store.resolve(service);
-        if (addr != null) {
-            try {
-                Files.write(file, address.getBytes(), CREATE,WRITE);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            lock.lock();
-            try {
+        lock.lock();
+        try {
+            if (addr != null) {
+                Files.write(file, address.getBytes(), CREATE, WRITE);
+                log.info("update a service {}", service);
+            } else {
                 Files.createFile(file);
                 Files.write(file, address.getBytes(), WRITE);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                lock.unlock();
+                log.info("register a service {}", service);
             }
+        } catch (IOException e) {
+            log.info("service {} is not registered: {}", service, e);
+            return false;
+        } finally {
+            lock.unlock();
         }
         return true;
     }
-    public String get(String service){
+
+    public String get(String service) {
         return memory.get(service);
     }
 

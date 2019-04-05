@@ -22,9 +22,10 @@ public class Controller {
 
     @RequestMapping(path = "/services",method = RequestMethod.POST)
     public boolean put(@RequestBody String service){
-        log.info("register new service {}",service);
         String[] pair = service.split("=");
         return storage.put(pair[0], pair[1]);
     }
+
+
 
 }

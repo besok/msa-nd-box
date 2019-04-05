@@ -1,5 +1,6 @@
 package ie.home.msa.messages.sandbox.discovery.client;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
@@ -18,31 +19,45 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 @Service
+@Slf4j
 public class DiscoveryClient implements ApplicationListener<WebServerInitializedEvent> {
 
     @Value("${spring.application.name}")
     private String serviceName;
-    @Value("${service-discovery.admin.address}")
+    @Value("${service-discovery.admin.address:http://localhost:9000}")
     private String adminAddress;
 
     private RestTemplate restTemplate;
 
 
+    private String URL;
+
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
         try {
-            String url = adminAddress + "/services";
+            restTemplate = new RestTemplate();
+            URL = adminAddress + "/services";
             int port = webServerInitializedEvent.getWebServer().getPort();
             String address = InetAddress.getLocalHost().getHostAddress() + ":" + port;
 
-            restTemplate = new RestTemplate();
-            String s = serviceName + "=" + address;
+            String service = serviceName + "=" + address;
 
-            ResponseEntity<Boolean> exchange = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(s), Boolean.class);
-            Boolean res = exchange.getBody();
-            System.out.println("registration : " + res);
+            ResponseEntity<Boolean> exchange = restTemplate.exchange(URL, HttpMethod.POST, new HttpEntity<>(service), Boolean.class);
+            if(exchange.getStatusCodeValue() != 200){
+                throw new DiscoveryClientException();
+            }
+            log.info("registration for {} in service discovery admin is {}",serviceName,exchange.getBody());
+
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            throw new DiscoveryClientException(e);
         }
+    }
+
+    public String getAddress(String service){
+        ResponseEntity<String> responseEntity = restTemplate.getForEntity(URL + "/" + service, String.class);
+        if(responseEntity.getStatusCodeValue() != 200){
+            throw new DiscoveryClientException();
+        }
+        return responseEntity.getBody();
     }
 }
