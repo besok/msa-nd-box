@@ -37,7 +37,8 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
 
             String service = serviceName + "=" + address;
 
-            ResponseEntity<Boolean> exchange = restTemplate.exchange(URL, HttpMethod.POST, new HttpEntity<>(service), Boolean.class);
+            ResponseEntity<Boolean> exchange = restTemplate.exchange(URL, HttpMethod.POST,
+                    new HttpEntity<>(service), Boolean.class);
             if(exchange.getStatusCodeValue() != 200){
                 throw new DiscoveryClientException();
             }
