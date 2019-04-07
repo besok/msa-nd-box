@@ -2,6 +2,7 @@ package ie.home.msa.messages;
 
 
 import java.io.Serializable;
+import java.util.Map;
 
 public class Message<T extends Serializable> implements Serializable {
     private T data;
@@ -17,19 +18,17 @@ public class Message<T extends Serializable> implements Serializable {
 
     public static  <M extends Message<K>,K extends Serializable>  M build(K data,Type type){
         switch (type){
-            case SERVICE: {
-                if(data instanceof String){
-                    return (M) new ServiceMessage((String)data);
+            case SERVICE_METRICS: {
+                if(data instanceof ServiceMessage.Metrics) {
+                    return (M) new ServiceMessage((ServiceMessage.Metrics) data);
                 }
-                else {
-                    return (M) new ServiceMessage(data.toString());
-                }
+
             }
             default: return null;
         }
     }
 
     public enum Type {
-        SERVICE,CHAT,DATA
+        SERVICE_METRICS,CHAT,DATA
     }
 }
