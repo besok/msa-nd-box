@@ -9,6 +9,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @EnableDiscoveryClient
 public class GreetingServiceApp {
     public static void main(String[] args) {
-        SpringApplication.run(GreetingServiceApp.class);
+        SpringApplication.run(GreetingServiceApp.class,args);
     }
 }
