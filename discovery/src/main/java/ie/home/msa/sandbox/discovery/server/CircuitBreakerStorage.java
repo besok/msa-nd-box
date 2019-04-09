@@ -29,14 +29,14 @@ public class CircuitBreakerStorage {
     public void turnOff(String service) {
         if (services.containsKey(service)) {
             services.put(service, true);
-            log.info(" service {} is turn off",service);
+            log.info(" service {} is turn off", service);
         }
     }
 
     public void turnOn(String service) {
         if (services.containsKey(service)) {
             services.put(service, false);
-            log.info(" service {} is turn on",service);
+            log.info(" service {} is turn on", service);
         }
     }
 
@@ -59,10 +59,25 @@ public class CircuitBreakerStorage {
         lock.lock();
         try {
             Boolean val = services.get(serv);
-            return Objects.isNull(val)?false:val;
+            return Objects.isNull(val) ? false : val;
         } finally {
             lock.unlock();
         }
+    }
+
+    public boolean remove(String serv) {
+        lock.lock();
+        try {
+            List<String> servs = Files.readAllLines(store);
+            servs.removeIf(e -> e.contains(serv));
+            Files.write(store, servs, StandardOpenOption.CREATE);
+            return true;
+        } catch (IOException e) {
+            log.info(" error remove circuet breaker", e);
+        } finally {
+            lock.unlock();
+        }
+        return false;
     }
 
     @PostConstruct

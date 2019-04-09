@@ -38,6 +38,9 @@ public class ServiceController {
             circuitBreakerStorage.put(servName);
             circuitBreakerStorage.turnOn(servName);
         }
+        else{
+            circuitBreakerStorage.remove(servName);
+        }
         return message;
     }
 
