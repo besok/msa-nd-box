@@ -28,16 +28,20 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
     private String circuitBreaker;
 
     private RestTemplate restTemplate;
-
+    private int port;
 
     private String URL;
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
+        this.port = webServerInitializedEvent.getWebServer().getPort();
+        registration();
+    }
+
+    public void registration(){
         try {
             restTemplate = new RestTemplate();
             URL = adminAddress + "/services";
-            int port = webServerInitializedEvent.getWebServer().getPort();
             String address = InetAddress.getLocalHost().getHostAddress() + ":" + port;
 
             ServiceRegisterMessage message = MessageBuilder.registerMessage(serviceName, address,
