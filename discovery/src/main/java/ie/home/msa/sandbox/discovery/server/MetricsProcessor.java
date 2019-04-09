@@ -1,6 +1,7 @@
 package ie.home.msa.sandbox.discovery.server;
 
 import ie.home.msa.messages.ServiceMessage;
+import ie.home.msa.messages.ServiceMetricsMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,7 @@ public class MetricsProcessor {
         this.handlers = handlers;
     }
 
-    public void process(String service, ServiceMessage.Metrics metrics){
+    public void process(String service, ServiceMetricsMessage.Metrics metrics){
         for (Handler handler : handlers) {
             handler.handle(service,metrics);
         }

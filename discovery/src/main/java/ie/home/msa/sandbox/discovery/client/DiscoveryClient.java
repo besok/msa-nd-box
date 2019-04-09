@@ -1,5 +1,7 @@
 package ie.home.msa.sandbox.discovery.client;
 
+import ie.home.msa.messages.MessageBuilder;
+import ie.home.msa.messages.ServiceRegisterMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
@@ -22,6 +24,9 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
     @Value("${service-discovery.admin.address:http://localhost:9000}")
     private String adminAddress;
 
+    @Value("${circuit-breaker:false}")
+    private String circuitBreaker;
+
     private RestTemplate restTemplate;
 
 
@@ -35,25 +40,22 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
             int port = webServerInitializedEvent.getWebServer().getPort();
             String address = InetAddress.getLocalHost().getHostAddress() + ":" + port;
 
-            String service = serviceName + "=" + address;
+            ServiceRegisterMessage message = MessageBuilder.registerMessage(serviceName, address,
+                    " service");
 
-            ResponseEntity<Boolean> exchange = restTemplate.exchange(URL, HttpMethod.POST,
-                    new HttpEntity<>(service), Boolean.class);
-            if(exchange.getStatusCodeValue() != 200){
+            int cb = Boolean.valueOf(this.circuitBreaker) ? 1 : 0;
+            message.getBody().putProp("circuit-breaker", cb);
+            ResponseEntity<ServiceRegisterMessage> exchange = restTemplate.exchange(URL, HttpMethod.POST,
+                    new HttpEntity<>(message), ServiceRegisterMessage.class);
+            if (exchange.getStatusCode().isError()) {
                 throw new DiscoveryClientException();
             }
-            log.info("registration for {} in service discovery admin is {}",serviceName,exchange.getBody());
+            log.info("registration for {} in service discovery admin is {}",
+                    serviceName, exchange.getBody().getStatus());
 
         } catch (UnknownHostException e) {
             throw new DiscoveryClientException(e);
         }
     }
 
-    public String getAddress(String service){
-        ResponseEntity<String> responseEntity = restTemplate.getForEntity(URL + "/" + service, String.class);
-        if(responseEntity.getStatusCodeValue() != 200){
-            throw new DiscoveryClientException();
-        }
-        return responseEntity.getBody();
-    }
 }

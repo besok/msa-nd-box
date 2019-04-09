@@ -1,4 +1,7 @@
 package ie.home.msa.messages;
 
-public class ServiceMessage {
+import java.io.Serializable;
+
+public class ServiceMessage<T extends Serializable> extends Message<ServiceStatus, T> {
+
 }

@@ -31,10 +31,12 @@ public class ServiceController {
     @RequestMapping(path = "/services", method = RequestMethod.POST)
     public ServiceRegisterMessage register(@RequestBody ServiceRegisterMessage message) {
         ServiceRegisterMessage.Service serv = message.getBody();
-        serviceRegistryStorage.put(serv.getName(), serv.getAddress());
+        String servName = serv.getName();
+        serviceRegistryStorage.put(servName, serv.getAddress());
         int prop = serv.getProp("circuit-breaker");
         if (prop > 0) {
-            circuitBreakerStorage.put(serv.getName());
+            circuitBreakerStorage.put(servName);
+            circuitBreakerStorage.turnOn(servName);
         }
         return message;
     }

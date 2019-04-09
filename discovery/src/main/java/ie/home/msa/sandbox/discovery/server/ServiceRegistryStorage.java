@@ -53,7 +53,7 @@ public class ServiceRegistryStorage {
             String addr = memory.put(service, address);
             if (addr != null) {
                 Files.write(file, address.getBytes(), CREATE, WRITE);
-                log.info("update a service {}", service);
+                log.info("update a service {} - {}", service,addr);
             } else {
                 Files.createFile(file);
                 Files.write(file, address.getBytes(), WRITE);

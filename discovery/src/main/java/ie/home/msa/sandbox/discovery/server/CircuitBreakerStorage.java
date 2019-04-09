@@ -43,8 +43,8 @@ public class CircuitBreakerStorage {
     public void put(String service) {
         lock.lock();
         try {
-            boolean first = services.put(service, true);
-            if (first) {
+            Boolean first = services.put(service, true);
+            if (Objects.isNull(first)) {
                 String serv = service + System.lineSeparator();
                 Files.write(store, serv.getBytes(), StandardOpenOption.APPEND);
             }

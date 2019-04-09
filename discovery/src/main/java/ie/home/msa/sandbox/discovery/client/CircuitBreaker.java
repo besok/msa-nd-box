@@ -1,4 +1,4 @@
-package ie.home.msa.lab;
+package ie.home.msa.sandbox.discovery.client;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

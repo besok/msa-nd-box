@@ -1,7 +1,8 @@
-package ie.home.msa.lab;
+package ie.home.msa.sandbox.discovery.client;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.cglib.proxy.*;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,7 @@ public class CircuitBreakerBeanPostProcessor implements BeanPostProcessor {
                 CircuitBreakerMethodStore.put(beanName + "." + method.getName(), cbAnn.value());
             }
         }
-        return null;
+        return bean;
     }
 
     @Override

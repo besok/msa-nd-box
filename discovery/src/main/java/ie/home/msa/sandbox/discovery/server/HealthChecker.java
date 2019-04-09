@@ -1,7 +1,6 @@
 package ie.home.msa.sandbox.discovery.server;
 
-import ie.home.msa.messages.ServiceEnvelope;
-import ie.home.msa.messages.ServiceMessage;
+import ie.home.msa.messages.ServiceMetricsMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +18,14 @@ import java.util.concurrent.TimeUnit;
 public class HealthChecker {
     private ScheduledExecutorService executorService;
     private final ServiceRegistryStorage storage;
+    private final CircuitBreakerStorage circuitBreakerStorage;
     private RestTemplate restTemplate;
     private final MetricsProcessor processor;
 
     @Autowired
-    public HealthChecker(ServiceRegistryStorage storage, MetricsProcessor processor) {
+    public HealthChecker(ServiceRegistryStorage storage, CircuitBreakerStorage circuitBreakerStorage, MetricsProcessor processor) {
         this.storage = storage;
+        this.circuitBreakerStorage = circuitBreakerStorage;
         this.processor = processor;
         this.restTemplate = new RestTemplate();
         this.executorService = new ScheduledThreadPoolExecutor(1);
@@ -43,17 +44,17 @@ public class HealthChecker {
                 String addr = serviceEntry.getValue();
                 String url = "http://" + addr + "/health";
                 try {
-                    ResponseEntity<ServiceEnvelope> r = restTemplate.getForEntity(url, ServiceEnvelope.class);
+                    ResponseEntity<ServiceMetricsMessage> r = restTemplate.getForEntity(url, ServiceMetricsMessage.class);
                     if (r.getStatusCode().isError()) {
                         log.info(" service {} is unavailable , e {}", serv, r.getStatusCode().getReasonPhrase());
                     } else {
-                        ServiceEnvelope envelope = r.getBody();
-                        ServiceMessage message = envelope.getMessage();
-                        log.info(" service {} is available", serv);
-                        processor.process(serv, message.getData());
+                        ServiceMetricsMessage message = r.getBody();
+                        log.info(" service {} is available {} ", serv,addr);
+                        processor.process(serv, message.getBody());
                     }
                 } catch (Exception e) {
-                    log.info("service {} at url {} is unavailable , e {}", serv, addr, e);
+                    log.info("service {} at url {} is unavailable ", serv, addr);
+                    circuitBreakerStorage.turnOff(serv);
                 }
             }
         };

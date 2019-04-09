@@ -1,4 +1,4 @@
 package ie.home.msa.messages;
 
-public class GetServiceMessage {
+public class GetServiceMessage extends ServiceRegisterMessage {
 }

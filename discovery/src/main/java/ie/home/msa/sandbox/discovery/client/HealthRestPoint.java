@@ -1,6 +1,6 @@
 package ie.home.msa.sandbox.discovery.client;
 
-import ie.home.msa.messages.ServiceEnvelope;
+import ie.home.msa.messages.ServiceMetricsMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -17,7 +17,7 @@ public class HealthRestPoint {
     }
 
     @RequestMapping(path = "/health",method = RequestMethod.GET)
-    public ServiceEnvelope health(){
+    public ServiceMetricsMessage health(){
         return aggregator.checkHealth();
     }
 }
