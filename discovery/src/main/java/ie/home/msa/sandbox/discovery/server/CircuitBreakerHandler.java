@@ -10,10 +10,10 @@ import java.util.Map;
 @Component
 @Slf4j
 public class CircuitBreakerHandler implements Handler {
-    private final CircuitBreakerStorage storage;
+    private final AbstractSingleFileStorage storage;
 
     @Autowired
-    public CircuitBreakerHandler(CircuitBreakerStorage storage) {
+    public CircuitBreakerHandler(AbstractSingleFileStorage storage) {
         this.storage = storage;
     }
 

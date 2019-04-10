@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class FileStorageTest {
-    ServiceRegistryStorage fileStorage;
+    ServiceRegistryFolderStorage fileStorage;
 
     @Before
     public void setUp() throws Exception {
-        fileStorage = new ServiceRegistryStorage();
+        fileStorage = new ServiceRegistryFolderStorage();
         fileStorage.init();
         fileStorage.put("service", "data");
     }

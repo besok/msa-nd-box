@@ -17,13 +17,13 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class HealthChecker {
     private ScheduledExecutorService executorService;
-    private final ServiceRegistryStorage storage;
-    private final CircuitBreakerStorage circuitBreakerStorage;
+    private final ServiceRegistryFolderStorage storage;
+    private final AbstractSingleFileStorage circuitBreakerStorage;
     private RestTemplate restTemplate;
     private final MetricsProcessor processor;
 
     @Autowired
-    public HealthChecker(ServiceRegistryStorage storage, CircuitBreakerStorage circuitBreakerStorage, MetricsProcessor processor) {
+    public HealthChecker(ServiceRegistryFolderStorage storage, AbstractSingleFileStorage circuitBreakerStorage, MetricsProcessor processor) {
         this.storage = storage;
         this.circuitBreakerStorage = circuitBreakerStorage;
         this.processor = processor;

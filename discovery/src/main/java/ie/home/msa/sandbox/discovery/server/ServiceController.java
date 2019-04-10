@@ -11,12 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class ServiceController {
 
-    private final ServiceRegistryStorage serviceRegistryStorage;
-    private final CircuitBreakerStorage circuitBreakerStorage;
+    private final ServiceRegistryFolderStorage serviceRegistryFolderStorage;
+    private final CircuitBreakerFileStorage circuitBreakerStorage;
 
     @Autowired
-    public ServiceController(ServiceRegistryStorage storage, CircuitBreakerStorage circuitBreakerStorage) {
-        this.serviceRegistryStorage = storage;
+    public ServiceController(ServiceRegistryFolderStorage storage, CircuitBreakerFileStorage circuitBreakerStorage) {
+        this.serviceRegistryFolderStorage = storage;
         this.circuitBreakerStorage = circuitBreakerStorage;
     }
 
@@ -25,17 +25,17 @@ public class ServiceController {
         if (circuitBreakerStorage.get(service)) {
            return MessageBuilder.serviceMessage(service, "",ServiceStatus.FAILED);
         }
-        return MessageBuilder.serviceMessage(service,serviceRegistryStorage.get(service),ServiceStatus.READY);
+        return MessageBuilder.serviceMessage(service, serviceRegistryFolderStorage.get(service),ServiceStatus.READY);
     }
 
     @RequestMapping(path = "/services", method = RequestMethod.POST)
     public ServiceRegisterMessage register(@RequestBody ServiceRegisterMessage message) {
         ServiceRegisterMessage.Service serv = message.getBody();
         String servName = serv.getName();
-        serviceRegistryStorage.put(servName, serv.getAddress());
+        serviceRegistryFolderStorage.put(servName, serv.getAddress());
         int prop = serv.getProp("circuit-breaker");
         if (prop > 0) {
-            circuitBreakerStorage.put(servName);
+            circuitBreakerStorage.put(servName,true);
             circuitBreakerStorage.turnOn(servName);
         }
         else{

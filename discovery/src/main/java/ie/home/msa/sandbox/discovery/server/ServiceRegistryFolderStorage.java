@@ -1,6 +1,7 @@
 package ie.home.msa.sandbox.discovery.server;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -19,7 +20,7 @@ import static java.nio.file.StandardOpenOption.*;
 
 @Service
 @Slf4j
-public class ServiceRegistryStorage {
+public class ServiceRegistryFolderStorage {
 
     private Path store;
     private Map<String, String> memory;
@@ -30,11 +31,10 @@ public class ServiceRegistryStorage {
         return store;
     }
 
-    public ServiceRegistryStorage() {
+    public ServiceRegistryFolderStorage() {
         lock = new ReentrantLock();
         memory = new HashMap<>();
-        store = Paths.get("src", "main", "resources")
-                .resolve("store");
+        store = Paths.get(new ClassPathResource("store").getPath());
 
     }
 
