@@ -1,7 +1,7 @@
 package ie.home.msa.sandbox.discovery.server;
 
-import ie.home.msa.messages.ServiceMetricsMessage;
 import lombok.extern.slf4j.Slf4j;
+import ie.home.msa.messages.ServiceMetricsMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

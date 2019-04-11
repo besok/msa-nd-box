@@ -10,14 +10,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class HealthRestPoint {
 
     private final HealthAggregator aggregator;
-
+    private final ApplicationRestarter restarter;
     @Autowired
-    public HealthRestPoint(HealthAggregator aggregator) {
+    public HealthRestPoint(HealthAggregator aggregator, ApplicationRestarter restarter) {
         this.aggregator = aggregator;
+        this.restarter = restarter;
     }
 
     @RequestMapping(path = "/health",method = RequestMethod.GET)
     public ServiceMetricsMessage health(){
         return aggregator.checkHealth();
+    }
+
+
+    @RequestMapping(path = "/close",method = RequestMethod.GET)
+    public void restart(){
+        restarter.close();
     }
 }

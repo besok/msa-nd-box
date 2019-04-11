@@ -11,13 +11,13 @@ public class ServiceRegisterMessage extends ServiceMessage<ServiceRegisterMessag
         private String name;
         private String address;
 
-        private Map<String, Integer> properties;
+        private Map<String, String> properties;
 
-        public Map<String, Integer> getProperties() {
+        public Map<String, String> getProperties() {
             return properties;
         }
 
-        public void setProperties(Map<String, Integer> properties) {
+        public void setProperties(Map<String, String> properties) {
             this.properties = properties;
         }
 
@@ -27,11 +27,11 @@ public class ServiceRegisterMessage extends ServiceMessage<ServiceRegisterMessag
             this.properties = new HashMap<>();
         }
 
-        public void putProp(String prop, Integer val) {
+        public void putProp(String prop, String val) {
             properties.put(prop, val);
         }
 
-        public int getProp(String prop) {
+        public String getProp(String prop) {
             return properties.get(prop);
         }
 

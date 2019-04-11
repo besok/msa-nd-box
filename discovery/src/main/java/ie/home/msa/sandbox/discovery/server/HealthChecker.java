@@ -13,8 +13,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-@Component
 @Slf4j
+@Component
 public class HealthChecker {
     private ScheduledExecutorService executorService;
     private final ServiceRegistryFolderStorage storage;

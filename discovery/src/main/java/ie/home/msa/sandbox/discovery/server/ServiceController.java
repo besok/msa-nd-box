@@ -14,10 +14,14 @@ public class ServiceController {
     private final ServiceRegistryFolderStorage serviceRegistryFolderStorage;
     private final CircuitBreakerFileStorage circuitBreakerStorage;
 
+    private final ServiceRegistrator serviceRegistrator;
     @Autowired
-    public ServiceController(ServiceRegistryFolderStorage storage, CircuitBreakerFileStorage circuitBreakerStorage) {
+    public ServiceController(ServiceRegistryFolderStorage storage,
+                             CircuitBreakerFileStorage circuitBreakerStorage,
+                             ServiceRegistrator serviceRegistrator) {
         this.serviceRegistryFolderStorage = storage;
         this.circuitBreakerStorage = circuitBreakerStorage;
+        this.serviceRegistrator = serviceRegistrator;
     }
 
     @RequestMapping(path = "/services/{service}", method = RequestMethod.GET)
@@ -30,18 +34,7 @@ public class ServiceController {
 
     @RequestMapping(path = "/services", method = RequestMethod.POST)
     public ServiceRegisterMessage register(@RequestBody ServiceRegisterMessage message) {
-        ServiceRegisterMessage.Service serv = message.getBody();
-        String servName = serv.getName();
-        serviceRegistryFolderStorage.put(servName, serv.getAddress());
-        int prop = serv.getProp("circuit-breaker");
-        if (prop > 0) {
-            circuitBreakerStorage.put(servName,true);
-            circuitBreakerStorage.turnOn(servName);
-        }
-        else{
-            circuitBreakerStorage.remove(servName);
-        }
-        return message;
+        return serviceRegistrator.register(message);
     }
 
 

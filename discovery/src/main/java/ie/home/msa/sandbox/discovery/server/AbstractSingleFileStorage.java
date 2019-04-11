@@ -51,6 +51,18 @@ public abstract class AbstractSingleFileStorage<T> {
         }
     }
 
+    protected void clean() {
+        lock.lock();
+        try {
+           this.services.clear();
+           Files.write(store,"".getBytes(),StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            log.info(" file can not be truncated ",e);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     protected abstract String toFile(String serv, T val);
 
     protected abstract Map<String, T> fromFile(List<String> records);
@@ -86,9 +98,10 @@ public abstract class AbstractSingleFileStorage<T> {
 
     @PostConstruct
     protected void init() throws IOException {
-        if (Files.notExists(getStore())) {
-            Files.createFile(getStore());
+        Path store = getStore();
+        if (!store.toFile().exists()) {
+            Files.createFile(store);
         }
-        this.services = fromFile(Files.readAllLines(getStore()));
+        this.services = fromFile(Files.readAllLines(store));
     }
 }

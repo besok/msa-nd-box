@@ -19,13 +19,16 @@ import java.net.UnknownHostException;
 @Slf4j
 public class DiscoveryClient implements ApplicationListener<WebServerInitializedEvent> {
 
-    @Value("${spring.application.name}")
+    @Value("${spring.application.name:default-service}")
     private String serviceName;
     @Value("${service-discovery.admin.address:http://localhost:9000}")
     private String adminAddress;
 
     @Value("${circuit-breaker:false}")
     private String circuitBreaker;
+
+    @Value("${retry.path-to-jar:false}")
+    private String pathToJar;
 
     private RestTemplate restTemplate;
     private int port;
@@ -47,8 +50,8 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
             ServiceRegisterMessage message = MessageBuilder.registerMessage(serviceName, address,
                     " service");
 
-            int cb = Boolean.valueOf(this.circuitBreaker) ? 1 : 0;
-            message.getBody().putProp("circuit-breaker", cb);
+            message.getBody().putProp("circuit-breaker", this.circuitBreaker);
+            message.getBody().putProp("retry",pathToJar);
             ResponseEntity<ServiceRegisterMessage> exchange = restTemplate.exchange(URL, HttpMethod.POST,
                     new HttpEntity<>(message), ServiceRegisterMessage.class);
             if (exchange.getStatusCode().isError()) {

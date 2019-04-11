@@ -1,9 +1,11 @@
 package ie.home.msa.sandbox.discovery.server;
 
+import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+@Component
 public class RetryFileStorage extends AbstractSingleFileStorage<String> {
     public RetryFileStorage() {
         super("retry-list");

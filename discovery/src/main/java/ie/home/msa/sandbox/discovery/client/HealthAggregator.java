@@ -2,18 +2,13 @@ package ie.home.msa.sandbox.discovery.client;
 
 import ie.home.msa.messages.MessageBuilder;
 import ie.home.msa.messages.ServiceMetricsMessage;
-import ie.home.msa.messages.ServiceStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import static ie.home.msa.messages.ServiceMessage.*;
 import static ie.home.msa.messages.ServiceStatus.*;
 
 @Component
