@@ -18,12 +18,12 @@ import java.util.concurrent.TimeUnit;
 public class HealthChecker {
     private ScheduledExecutorService executorService;
     private final ServiceRegistryFolderStorage storage;
-    private final AbstractSingleFileStorage circuitBreakerStorage;
+    private final CircuitBreakerFileStorage circuitBreakerStorage;
     private RestTemplate restTemplate;
     private final MetricsProcessor processor;
 
     @Autowired
-    public HealthChecker(ServiceRegistryFolderStorage storage, AbstractSingleFileStorage circuitBreakerStorage, MetricsProcessor processor) {
+    public HealthChecker(ServiceRegistryFolderStorage storage, CircuitBreakerFileStorage circuitBreakerStorage, MetricsProcessor processor) {
         this.storage = storage;
         this.circuitBreakerStorage = circuitBreakerStorage;
         this.processor = processor;
