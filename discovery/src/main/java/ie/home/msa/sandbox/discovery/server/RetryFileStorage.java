@@ -15,7 +15,7 @@ public class RetryFileStorage extends AbstractSingleFileStorage<String> {
     }
 
     @Override
-    protected Map<String, String> fromFile(List<String> records) git {
+    protected Map<String, String> fromFile(List<String> records) {
         return records.stream()
                 .map(e -> e.split(":"))
                 .collect(Collectors.toMap(p -> p[0], p -> p[1]));
