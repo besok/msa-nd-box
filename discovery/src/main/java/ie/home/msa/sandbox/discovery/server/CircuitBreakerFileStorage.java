@@ -7,6 +7,8 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -22,7 +24,6 @@ public class CircuitBreakerFileStorage extends AbstractSingleFileStorage<Boolean
             log.info(" service {} is turn off", service);
         }
     }
-
     public void turnOn(String service) {
         if (getServices().containsKey(service)) {
             getServices().put(service, false);
@@ -30,17 +31,14 @@ public class CircuitBreakerFileStorage extends AbstractSingleFileStorage<Boolean
         }
     }
 
-
+    @Override
+    protected String toFile(String serv, Boolean val) {
+        return serv;
+    }
 
     @Override
-    @PostConstruct
-    protected void init() throws IOException {
-        if (Files.notExists(getStore())) {
-            Files.createFile(getStore());
-        }
-        List<String> servicesList = Files.readAllLines(getStore());
-        for (String service : servicesList) {
-            getServices().put(service, false);
-        }
+    protected Map<String, Boolean> fromFile(List<String> records) {
+        return records.stream().collect(Collectors.toMap(s->s,s->false));
     }
+
 }
