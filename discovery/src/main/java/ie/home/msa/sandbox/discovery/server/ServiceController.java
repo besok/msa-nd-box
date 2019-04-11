@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
+
 @RestController
 @Slf4j
 public class ServiceController {
@@ -26,7 +28,8 @@ public class ServiceController {
 
     @RequestMapping(path = "/services/{service}", method = RequestMethod.GET)
     public ServiceRegisterMessage getAddress(@PathVariable String service) {
-        if (circuitBreakerStorage.get(service)) {
+        Boolean state = circuitBreakerStorage.get(service);
+        if (Objects.nonNull(state) && state) {
            return MessageBuilder.serviceMessage(service, "",ServiceStatus.FAILED);
         }
         return MessageBuilder.serviceMessage(service, serviceRegistryFolderStorage.get(service),ServiceStatus.READY);
