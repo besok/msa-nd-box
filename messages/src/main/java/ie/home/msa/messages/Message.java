@@ -8,6 +8,16 @@ public abstract class Message<E extends Enum<E>,T extends Serializable> implemen
     private T body;
     private E status;
 
+    private Service service;
+
+    public Service getService() {
+        return service;
+    }
+
+    public void setService(Service service) {
+        this.service = service;
+    }
+
     public int getVersion() {
         return version;
     }
@@ -39,4 +49,5 @@ public abstract class Message<E extends Enum<E>,T extends Serializable> implemen
     public void setStatus(E status) {
         this.status = status;
     }
+
 }

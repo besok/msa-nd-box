@@ -4,13 +4,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ServiceRegisterMessage extends ServiceMessage<ServiceRegisterMessage.Service> {
+public class ServiceRegisterMessage extends ServiceMessage<ServiceRegisterMessage.Properties> {
 
 
-    public static class Service implements Serializable {
-        private String name;
-        private String address;
-
+    public static class Properties implements Serializable {
         private Map<String, String> properties;
 
         public Map<String, String> getProperties() {
@@ -21,38 +18,17 @@ public class ServiceRegisterMessage extends ServiceMessage<ServiceRegisterMessag
             this.properties = properties;
         }
 
-        public Service(String name, String address) {
-            this.name = name;
-            this.address = address;
-            this.properties = new HashMap<>();
-        }
-
-        public void putProp(String prop, String val) {
+        public void putProperty(String prop, String val) {
             properties.put(prop, val);
         }
 
-        public String getProp(String prop) {
+        public String getProperty(String prop) {
             return properties.get(prop);
         }
 
-        public Service() {
+        public Properties() {
             this.properties = new HashMap<>();
         }
 
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getAddress() {
-            return address;
-        }
-
-        public void setAddress(String address) {
-            this.address = address;
-        }
     }
 }

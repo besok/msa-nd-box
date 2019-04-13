@@ -14,25 +14,32 @@ import static ie.home.msa.messages.ServiceStatus.*;
 @Component
 @Slf4j
 public class HealthAggregator {
-    private final List<Health> healthList;
+    private final List<HMetrics> healthList;
+    private String service;
+    private String address;
+
+    public void setServiceAndAddress(String service,String address){
+        this.service=service;
+        this.address=address;
+    }
 
     private AtomicInteger ver = new AtomicInteger(0);
 
     @Autowired
-    public HealthAggregator(List<Health> healthList) {
+    public HealthAggregator(List<HMetrics> healthList) {
         this.healthList = healthList;
     }
 
     public ServiceMetricsMessage checkHealth() {
         int v = ver.incrementAndGet();
         return collectMetrics()
-                .map(m -> MessageBuilder.metricsMessage(m,v, READY))
-                .orElse(MessageBuilder.metricsMessage(null,v, FAILED));
+                .map(m -> MessageBuilder.metricsMessage(service,address,m,v, READY))
+                .orElse(MessageBuilder.metricsMessage(service,address,null,v, FAILED));
     }
 
     private Optional<ServiceMetricsMessage.Metrics> collectMetrics() {
         return healthList.stream()
-                .map(Health::health)
+                .map(HMetrics::metric)
                 .reduce(ServiceMetricsMessage.Metrics::merge);
     }
 

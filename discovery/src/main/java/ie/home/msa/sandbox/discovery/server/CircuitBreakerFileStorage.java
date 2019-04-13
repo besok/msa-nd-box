@@ -1,44 +1,63 @@
 package ie.home.msa.sandbox.discovery.server;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Component
-@Slf4j
-public class CircuitBreakerFileStorage extends AbstractSingleFileStorage<Boolean> {
+import static ie.home.msa.sandbox.discovery.server.StorageListenerHandler.FileStorageType.*;
 
-    public CircuitBreakerFileStorage() {
-        super("circuit-list");
-    }
+@Service
+public class CircuitBreakerFileStorage extends AbstractFileStorage<CircuitBreakerData> {
 
-    public void turnOff(String service) {
-        if (getServices().containsKey(service)) {
-            getServices().put(service, true);
-            log.info(" service {} is turn off", service);
-        }
-    }
-    public void turnOn(String service) {
-        if (getServices().containsKey(service)) {
-            getServices().put(service, false);
-            log.info(" service {} is turn on", service);
-        }
+
+    public CircuitBreakerFileStorage(StorageListenerHandler handler) {
+        super(CIRCUIT_BREAKER.getName(),handler);
     }
 
     @Override
-    protected String toFile(String serv, Boolean val) {
-        return serv;
+    protected List<CircuitBreakerData> fromFile(List<String> params) {
+        return params.stream()
+                .map(e -> e.split("="))
+                .map(CircuitBreakerData::new)
+                .collect(Collectors.toList());
     }
 
     @Override
-    protected Map<String, Boolean> fromFile(List<String> records) {
-        return records.stream().collect(Collectors.toMap(s->s,s->false));
+    protected List<String> toFile(List<CircuitBreakerData> params) {
+        return params.stream().map(CircuitBreakerData::toString)
+                .collect(Collectors.toList());
     }
+
+    @Override
+    protected boolean equal(CircuitBreakerData left, CircuitBreakerData right) {
+        return left.getAddress().equals(right.getAddress());
+    }
+
+
+    public Optional<CircuitBreakerData> getOneReady(String service) {
+        return get(service).stream().filter(e -> e.getStatus().equals("ready")).findAny();
+    }
+
+    public void turnOff(String service, String address) {
+        int v = 0;
+        List<CircuitBreakerData> cbList = get(service);
+        if (Objects.nonNull(cbList)) {
+            for (CircuitBreakerData cbData : cbList) {
+                if (cbData.getAddress().equals(address)) {
+                    v = cbData.getVersion();
+                }
+            }
+        }
+        v++;
+        put(service, new CircuitBreakerData(address, "failed", v));
+    }
+
+    public void turnOn(String service, String address) {
+        put(service, new CircuitBreakerData(address, "ready"));
+    }
+
 
 }

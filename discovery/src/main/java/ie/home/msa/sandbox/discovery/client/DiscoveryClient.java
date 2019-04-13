@@ -3,6 +3,7 @@ package ie.home.msa.sandbox.discovery.client;
 import ie.home.msa.messages.MessageBuilder;
 import ie.home.msa.messages.ServiceRegisterMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
@@ -19,6 +20,7 @@ import java.net.UnknownHostException;
 @Slf4j
 public class DiscoveryClient implements ApplicationListener<WebServerInitializedEvent> {
 
+    private final HealthAggregator aggregator;
     @Value("${spring.application.name:default-service}")
     private String serviceName;
     @Value("${service-discovery.admin.address:http://localhost:9000}")
@@ -26,14 +28,15 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
 
     @Value("${circuit-breaker:false}")
     private String circuitBreaker;
-
-    @Value("${retry.path-to-jar:false}")
-    private String pathToJar;
-
     private RestTemplate restTemplate;
     private int port;
 
     private String URL;
+
+    @Autowired
+    public DiscoveryClient(HealthAggregator aggregator) {
+        this.aggregator = aggregator;
+    }
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
@@ -47,11 +50,11 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
             URL = adminAddress + "/services";
             String address = InetAddress.getLocalHost().getHostAddress() + ":" + port;
 
+            aggregator.setServiceAndAddress(serviceName,address);
             ServiceRegisterMessage message = MessageBuilder.registerMessage(serviceName, address,
                     " service");
 
-            message.getBody().putProp("circuit-breaker", this.circuitBreaker);
-            message.getBody().putProp("retry",pathToJar);
+            message.getBody().putProperty("circuit-breaker", this.circuitBreaker);
             ResponseEntity<ServiceRegisterMessage> exchange = restTemplate.exchange(URL, HttpMethod.POST,
                     new HttpEntity<>(message), ServiceRegisterMessage.class);
             if (exchange.getStatusCode().isError()) {

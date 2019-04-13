@@ -1,44 +1,47 @@
 package ie.home.msa.sandbox.discovery.server;
 
-import ie.home.msa.messages.MessageBuilder;
 import ie.home.msa.messages.ServiceRegisterMessage;
 import ie.home.msa.messages.ServiceStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Objects;
+import java.util.Optional;
+
+import static ie.home.msa.messages.MessageBuilder.*;
 
 @RestController
 @Slf4j
 public class ServiceController {
 
-    private final ServiceRegistryFolderStorage serviceRegistryFolderStorage;
+    private final ServiceRegistryFileStorage serviceRegistryFileStorage;
     private final CircuitBreakerFileStorage circuitBreakerStorage;
 
     private final ServiceRegistrator serviceRegistrator;
+
     @Autowired
-    public ServiceController(ServiceRegistryFolderStorage storage,
+    public ServiceController(ServiceRegistryFileStorage storage,
                              CircuitBreakerFileStorage circuitBreakerStorage,
                              ServiceRegistrator serviceRegistrator) {
-        this.serviceRegistryFolderStorage = storage;
+        this.serviceRegistryFileStorage = storage;
         this.circuitBreakerStorage = circuitBreakerStorage;
         this.serviceRegistrator = serviceRegistrator;
     }
 
     @RequestMapping(path = "/services/{service}", method = RequestMethod.GET)
     public ServiceRegisterMessage getAddress(@PathVariable String service) {
-        Boolean state = circuitBreakerStorage.get(service);
-        if (Objects.nonNull(state) && state) {
-           return MessageBuilder.serviceMessage(service, "",ServiceStatus.FAILED);
+        if (circuitBreakerStorage.contains(service)) {
+            Optional<CircuitBreakerData> cbinfoOpt = circuitBreakerStorage.getOneReady(service);
+            return cbinfoOpt
+                    .map(e -> serviceMessage(service, e.getAddress(), ServiceStatus.READY))
+                    .orElseGet(() -> serviceMessage(service, "", ServiceStatus.FAILED));
         }
-        return MessageBuilder.serviceMessage(service, serviceRegistryFolderStorage.get(service),ServiceStatus.READY);
+        return serviceMessage(service, serviceRegistryFileStorage.getRand(service), ServiceStatus.READY);
     }
 
     @RequestMapping(path = "/services", method = RequestMethod.POST)
     public ServiceRegisterMessage register(@RequestBody ServiceRegisterMessage message) {
         return serviceRegistrator.register(message);
     }
-
 
 }
