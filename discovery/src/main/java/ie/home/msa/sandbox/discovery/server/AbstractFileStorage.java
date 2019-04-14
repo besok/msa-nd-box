@@ -30,12 +30,7 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
 
     private StorageListenerHandler listenerHandler;
 
-    Path getStore() {
-        return store;
-    }
-    Map<String, List<T>> getMemoryServices() {
-        return memoryServices;
-    }
+
 
     public AbstractFileStorage(String directory,StorageListenerHandler handler) {
         this.storeName = directory;
@@ -155,18 +150,6 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
             lock.unlock();
         }
     }
-
-    protected abstract List<T> fromFile(List<String> params);
-
-    protected abstract List<String> toFile(List<T> params);
-
-    protected abstract boolean equal(T left, T right);
-
-    private void rewriteToFile(Path filePath,List<String> vals) throws IOException {
-        Files.deleteIfExists(filePath);
-        Files.createFile(filePath);
-        Files.write(filePath,vals, WRITE);
-    }
     @PostConstruct
     protected void init() throws IOException {
         if (Files.notExists(store)) {
@@ -190,5 +173,23 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
             });
         }
         listenerHandler.onEvent(INIT,storeName,null,null);
+    }
+
+    protected abstract List<T> fromFile(List<String> params);
+    protected abstract List<String> toFile(List<T> params);
+    protected abstract boolean equal(T left, T right);
+
+    protected Path getStore() {
+        return store;
+    }
+    protected Map<String, List<T>> getMemoryServices() {
+        return memoryServices;
+    }
+
+
+    private void rewriteToFile(Path filePath,List<String> vals) throws IOException {
+        Files.deleteIfExists(filePath);
+        Files.createFile(filePath);
+        Files.write(filePath,vals, WRITE);
     }
 }

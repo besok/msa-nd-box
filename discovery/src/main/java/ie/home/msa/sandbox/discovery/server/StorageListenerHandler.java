@@ -18,8 +18,6 @@ public class StorageListenerHandler {
 
     public <T> void onEvent(StorageListener.Event event, String storage, String key, T val) {
         for (StorageListener listener : storageListeners) {
-            String l = listener.getClass().getSimpleName();
-            log.info("on event: {}, listener: {}, storage {},  key {}, val {}", event, l, storage, key, val);
             listener.onEvent(event, storage, key, val);
         }
     }
