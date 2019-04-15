@@ -8,16 +8,16 @@ import java.util.List;
 
 @Component
 public class ServiceRegistrator {
-    private final List<RegistrationHandler> resolvers;
+    private final List<RegistrationHandler> handlers;
 
     @Autowired
-    public ServiceRegistrator(List<RegistrationHandler> resolvers) {
-        this.resolvers = resolvers;
+    public ServiceRegistrator(List<RegistrationHandler> handlers) {
+        this.handlers = handlers;
     }
 
     public ServiceRegisterMessage register(ServiceRegisterMessage message){
-        for (RegistrationHandler resolver : resolvers) {
-            resolver.handle(message);
+        for (RegistrationHandler handler : handlers) {
+            handler.handle(message);
         }
         return message;
     }

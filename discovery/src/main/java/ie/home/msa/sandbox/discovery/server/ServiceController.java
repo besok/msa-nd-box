@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 import static ie.home.msa.messages.MessageBuilder.*;
+import static ie.home.msa.messages.ServiceStatus.*;
 
 @RestController
 @Slf4j
@@ -31,12 +32,12 @@ public class ServiceController {
     @RequestMapping(path = "/services/{service}", method = RequestMethod.GET)
     public ServiceRegisterMessage getAddress(@PathVariable String service) {
         if (circuitBreakerStorage.contains(service)) {
-            Optional<CircuitBreakerData> cbinfoOpt = circuitBreakerStorage.getOneReady(service);
-            return cbinfoOpt
-                    .map(e -> serviceMessage(service, e.getAddress(), ServiceStatus.READY))
-                    .orElseGet(() -> serviceMessage(service, "", ServiceStatus.FAILED));
+            return circuitBreakerStorage
+                    .getOneReady(service)
+                    .map(e -> serviceMessage(service, e.getAddress(), READY))
+                    .orElseGet(() -> serviceMessage(service, "", FAILED));
         }
-        return serviceMessage(service, serviceRegistryFileStorage.getRand(service), ServiceStatus.READY);
+        return serviceMessage(service, serviceRegistryFileStorage.getRand(service), READY);
     }
 
     @RequestMapping(path = "/services", method = RequestMethod.POST)

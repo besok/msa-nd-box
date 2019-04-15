@@ -28,6 +28,10 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
 
     @Value("${circuit-breaker:false}")
     private String circuitBreaker;
+
+    @Value("${load-balance-strategy:#{null}}")
+    private String loadBalance;
+
     private RestTemplate restTemplate;
     private int port;
 
@@ -55,6 +59,7 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
                     " service");
 
             message.getBody().putProperty("circuit-breaker", this.circuitBreaker);
+            message.getBody().putProperty("load-balance-strategy", this.loadBalance);
             ResponseEntity<ServiceRegisterMessage> exchange = restTemplate.exchange(URL, HttpMethod.POST,
                     new HttpEntity<>(message), ServiceRegisterMessage.class);
             if (exchange.getStatusCode().isError()) {

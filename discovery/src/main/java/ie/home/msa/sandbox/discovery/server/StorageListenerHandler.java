@@ -23,8 +23,9 @@ public class StorageListenerHandler {
     }
 
     public enum FileStorageType {
-        CIRCUIT_BREAKER("circuit_breaker"),
-        SERVICE_REGISTRY("service_registry")
+        CIRCUIT_BREAKER("circuit_breaker_storage"),
+        SERVICE_REGISTRY("service_registry_storage"),
+        LOAD_BALANCER("load_balancer_storage"),
         ;
         private String name;
 
