@@ -1,13 +1,13 @@
 package ie.home.msa.sandbox.discovery.server;
 
 public class LoadBalancerData {
-    private String strategy;
     private String address;
+    private String strategy;
 
 
-    public LoadBalancerData(String strategy, String address) {
-        this.strategy = strategy;
+    public LoadBalancerData(String address, String strategy) {
         this.address = address;
+        this.strategy = strategy;
     }
 
     public String getStrategy() {

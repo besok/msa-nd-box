@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class LoadBalanceHandler implements RegistrationHandler {
+public class LoadBalanceRegistrationHandler implements RegistrationHandler {
     private final LoadBalancerFileStorage storage;
 
     @Autowired
-    public LoadBalanceHandler(LoadBalancerFileStorage storage) {
+    public LoadBalanceRegistrationHandler(LoadBalancerFileStorage storage) {
         this.storage = storage;
     }
 

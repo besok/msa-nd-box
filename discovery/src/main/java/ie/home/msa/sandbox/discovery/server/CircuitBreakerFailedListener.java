@@ -13,12 +13,15 @@ public class CircuitBreakerFailedListener implements StorageListener {
 
     private final CircuitBreakerFileStorage cbStorage;
     private final ServiceRegistryFileStorage srStorage;
+    private final LoadBalancerFileStorage lbStorage;
 
     public CircuitBreakerFailedListener(
             @Lazy CircuitBreakerFileStorage cbStorage,
-            @Lazy ServiceRegistryFileStorage srStorage) {
+            @Lazy ServiceRegistryFileStorage srStorage,
+            @Lazy LoadBalancerFileStorage lbStorage) {
         this.cbStorage = cbStorage;
         this.srStorage = srStorage;
+        this.lbStorage = lbStorage;
     }
 
 
@@ -32,6 +35,7 @@ public class CircuitBreakerFailedListener implements StorageListener {
                         service,address);
                 cbStorage.removeVal(key,data);
                 srStorage.removeVal(key,address);
+                lbStorage.removeVal(key,new LoadBalancerData(address,""));
             }
         }
     }

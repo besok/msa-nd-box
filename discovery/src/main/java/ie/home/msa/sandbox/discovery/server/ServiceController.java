@@ -1,12 +1,13 @@
 package ie.home.msa.sandbox.discovery.server;
 
+import ie.home.msa.messages.GetServiceMessage;
 import ie.home.msa.messages.ServiceRegisterMessage;
-import ie.home.msa.messages.ServiceStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static ie.home.msa.messages.MessageBuilder.*;
 import static ie.home.msa.messages.ServiceStatus.*;
@@ -17,27 +18,32 @@ public class ServiceController {
 
     private final ServiceRegistryFileStorage serviceRegistryFileStorage;
     private final CircuitBreakerFileStorage circuitBreakerStorage;
-
     private final ServiceRegistrator serviceRegistrator;
+    private final LoadBalanceResolver loadBalanceResolver;
 
     @Autowired
     public ServiceController(ServiceRegistryFileStorage storage,
                              CircuitBreakerFileStorage circuitBreakerStorage,
-                             ServiceRegistrator serviceRegistrator) {
+                             ServiceRegistrator serviceRegistrator,
+                             LoadBalanceResolver loadBalanceResolver) {
         this.serviceRegistryFileStorage = storage;
         this.circuitBreakerStorage = circuitBreakerStorage;
         this.serviceRegistrator = serviceRegistrator;
+        this.loadBalanceResolver = loadBalanceResolver;
     }
 
     @RequestMapping(path = "/services/{service}", method = RequestMethod.GET)
-    public ServiceRegisterMessage getAddress(@PathVariable String service) {
+    public GetServiceMessage getAddress(@PathVariable String service) {
+        List<String> addreses;
         if (circuitBreakerStorage.contains(service)) {
-            return circuitBreakerStorage
-                    .getOneReady(service)
-                    .map(e -> serviceMessage(service, e.getAddress(), READY))
-                    .orElseGet(() -> serviceMessage(service, "", FAILED));
+            addreses = circuitBreakerStorage.getAllReady(service)
+                    .stream()
+                    .map(CircuitBreakerData::getAddress)
+                    .collect(Collectors.toList());
+        } else {
+            addreses = serviceRegistryFileStorage.get(service);
         }
-        return serviceMessage(service, serviceRegistryFileStorage.getRand(service), READY);
+        return loadBalanceResolver.resolve(service, addreses);
     }
 
     @RequestMapping(path = "/services", method = RequestMethod.POST)

@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static ie.home.msa.sandbox.discovery.server.StorageListenerHandler.FileStorageType.*;
@@ -37,8 +36,8 @@ public class CircuitBreakerFileStorage extends AbstractFileStorage<CircuitBreake
     }
 
 
-    public Optional<CircuitBreakerData> getOneReady(String service) {
-        return get(service).stream().filter(e -> e.getStatus().equals("ready")).findAny();
+    public List<CircuitBreakerData> getAllReady(String service) {
+        return get(service).stream().filter(e -> e.getStatus().equals("ready")).collect(Collectors.toList());
     }
 
     public void turnOff(String service, String address) {

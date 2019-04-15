@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,26 +45,30 @@ public class HealthChecker {
 
     private Runnable checkStatus() {
         return () -> {
-            Map<String, List<String>> services = storage.getMemoryServices();
-            for (Map.Entry<String, List<String>> serviceEntry : services.entrySet()) {
-                String serv = serviceEntry.getKey();
-                List<String> addr = serviceEntry.getValue();
-                for (String a : addr) {
-                    String url = "http://" + a + "/health";
-                    try {
-                        ResponseEntity<ServiceMetricsMessage> r = restTemplate.getForEntity(url, ServiceMetricsMessage.class);
-                        if (r.getStatusCode().isError()) {
-                            log.info(" service {} is unavailable , e {}", serv, r.getStatusCode().getReasonPhrase());
-                        } else {
-                            ServiceMetricsMessage message = r.getBody();
-                            log.info(" service {} is available {} ", serv, a);
-                            processor.process(message);
+            try {
+                Map<String, List<String>> services = storage.getMemoryServices();
+                for (Map.Entry<String, List<String>> serviceEntry : services.entrySet()) {
+                    String serv = serviceEntry.getKey();
+                    List<String> addr = new ArrayList<>(serviceEntry.getValue());
+                    for (String a : addr) {
+                        String url = "http://" + a + "/health";
+                        try {
+                            ResponseEntity<ServiceMetricsMessage> r = restTemplate.getForEntity(url, ServiceMetricsMessage.class);
+                            if (r.getStatusCode().isError()) {
+                                log.info(" service {} is unavailable , e {}", serv, r.getStatusCode().getReasonPhrase());
+                            } else {
+                                ServiceMetricsMessage message = r.getBody();
+                                log.info(" service {} is available {} ", serv, a);
+                                processor.process(message);
+                            }
+                        } catch (Exception e) {
+                            log.error("service {} at url {} is unavailable, exception: {}", serv, a, e.getMessage());
+                            circuitBreakerStorage.turnOff(serv, a);
                         }
-                    } catch (Exception e) {
-                        log.error("service {} at url {} is unavailable, exception: {}", serv, a,e.getMessage());
-                        circuitBreakerStorage.turnOff(serv,a);
                     }
                 }
+            } catch (Exception e) {
+                log.error("test error -> ",e);
             }
         };
     }

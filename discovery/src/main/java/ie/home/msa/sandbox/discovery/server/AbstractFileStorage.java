@@ -183,7 +183,7 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
         return store;
     }
     protected Map<String, List<T>> getMemoryServices() {
-        return memoryServices;
+        return new HashMap<>(memoryServices);
     }
 
 
