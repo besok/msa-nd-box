@@ -68,7 +68,7 @@ public class HealthChecker {
                     }
                 }
             } catch (Exception e) {
-                log.error("test error -> ",e);
+                log.error("common error ",e);
             }
         };
     }

@@ -65,7 +65,7 @@ public class LoadBalanceResolver {
         GetServiceMessage process(String service, List<String> address);
     }
 
-    private static class RandomProcessor implements Processor {
+    private class RandomProcessor implements Processor {
         private Random random;
 
         public RandomProcessor() {

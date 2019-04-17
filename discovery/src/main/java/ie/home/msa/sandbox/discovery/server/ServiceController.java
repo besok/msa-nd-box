@@ -1,7 +1,6 @@
 package ie.home.msa.sandbox.discovery.server;
 
-import ie.home.msa.messages.GetServiceMessage;
-import ie.home.msa.messages.ServiceRegisterMessage;
+import ie.home.msa.messages.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +33,20 @@ public class ServiceController {
 
     @RequestMapping(path = "/services/{service}", method = RequestMethod.GET)
     public GetServiceMessage getAddress(@PathVariable String service) {
+        return loadBalanceResolver.resolve(service, getAddresses(service));
+    }
+
+    @RequestMapping(path = "/services/all/{service}", method = RequestMethod.GET)
+    public GetAllNodesServiceMessage getAllAddresses(@PathVariable String service) {
+        return MessageBuilder.nodesServiceMessage(service, getAddresses(service), READY);
+    }
+
+    @RequestMapping(path = "/services", method = RequestMethod.POST)
+    public ServiceRegisterMessage register(@RequestBody ServiceRegisterMessage message) {
+        return serviceRegistrator.register(message);
+    }
+
+    private List<String> getAddresses(@PathVariable String service) {
         List<String> addreses;
         if (circuitBreakerStorage.contains(service)) {
             addreses = circuitBreakerStorage.getAllReady(service)
@@ -43,12 +56,7 @@ public class ServiceController {
         } else {
             addreses = serviceRegistryFileStorage.get(service);
         }
-        return loadBalanceResolver.resolve(service, addreses);
-    }
-
-    @RequestMapping(path = "/services", method = RequestMethod.POST)
-    public ServiceRegisterMessage register(@RequestBody ServiceRegisterMessage message) {
-        return serviceRegistrator.register(message);
+        return addreses;
     }
 
 }

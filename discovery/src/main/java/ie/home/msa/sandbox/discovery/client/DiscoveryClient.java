@@ -1,6 +1,8 @@
 package ie.home.msa.sandbox.discovery.client;
 
+import ie.home.msa.messages.GetAllNodesServiceMessage;
 import ie.home.msa.messages.MessageBuilder;
+import ie.home.msa.messages.Service;
 import ie.home.msa.messages.ServiceRegisterMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,14 +12,15 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.stream.Stream;
 
-@Service
 @Slf4j
+@Component
 public class DiscoveryClient implements ApplicationListener<WebServerInitializedEvent> {
 
     private final HealthAggregator aggregator;
@@ -32,10 +35,9 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
     @Value("${load-balance-strategy:#{null}}")
     private String loadBalance;
 
+    private String address;
     private RestTemplate restTemplate;
     private int port;
-
-    private String URL;
 
     @Autowired
     public DiscoveryClient(HealthAggregator aggregator) {
@@ -48,11 +50,32 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
         registration();
     }
 
+    public int findIdx(String[] nodes){
+        for (int i = 0; i < nodes.length; i++) {
+            String node = nodes[i];
+            if(node.equals(address)){
+                return i;
+            }
+        }
+        return -1;
+    }
+    public String[] getNodes(){
+        try {
+            String url = adminAddress + "/services/all/" + serviceName;
+            ResponseEntity<GetAllNodesServiceMessage> resp = restTemplate.getForEntity(url, GetAllNodesServiceMessage.class);
+            return Stream.of(resp.getBody().getBody())
+                    .map(Service::getAddress)
+                    .toArray(String[]::new);
+        }catch (Exception ex){
+            log.error("trying to get node list for service {}",serviceName,ex);
+        }
+        return new String[0];
+    }
     public void registration(){
         try {
             restTemplate = new RestTemplate();
-            URL = adminAddress + "/services";
-            String address = InetAddress.getLocalHost().getHostAddress() + ":" + port;
+            String URL = adminAddress + "/services";
+            address = InetAddress.getLocalHost().getHostAddress() + ":" + port;
 
             aggregator.setServiceAndAddress(serviceName,address);
             ServiceRegisterMessage message = MessageBuilder.registerMessage(serviceName, address,
@@ -73,4 +96,7 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
         }
     }
 
+    public RestTemplate getRestTemplate() {
+        return restTemplate;
+    }
 }
