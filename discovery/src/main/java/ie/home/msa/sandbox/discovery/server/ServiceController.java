@@ -3,8 +3,11 @@ package ie.home.msa.sandbox.discovery.server;
 import ie.home.msa.messages.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,6 +48,25 @@ public class ServiceController {
     public ServiceRegisterMessage register(@RequestBody ServiceRegisterMessage message) {
         return serviceRegistrator.register(message);
     }
+
+    @RequestMapping(path = "/services/{service}/init", method = RequestMethod.GET)
+    public List<Boolean> register(@PathVariable String service) {
+        GetAllNodesServiceMessage mes = getAllAddresses(service);
+        Service[] services = mes.getBody();
+        RestTemplate restTemplate = new RestTemplate();
+        List<Boolean> res = new ArrayList<>();
+        for (Service s : services) {
+            String address = s.getAddress();
+            ResponseEntity<Boolean> ent = restTemplate.getForEntity("http://" + address + "/init", Boolean.class);
+            if (ent.getStatusCode().isError()) {
+                res.add(false);
+            }else{
+                res.add(ent.getBody());
+            }
+        }
+        return res;
+    }
+
 
     private List<String> getAddresses(@PathVariable String service) {
         List<String> addreses;

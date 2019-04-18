@@ -4,6 +4,5 @@ service-discovery.admin.address: http://10.0.75.1:9000
 circuit-breaker: true
 load-balance-strategy: round-robin
 
-data-replication-node-count: 5
 
 server.port: 0

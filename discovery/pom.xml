@@ -23,6 +23,7 @@
         </plugins>
     </build>
     <dependencies>
+
         <dependency>
             <groupId>ie.home.sandbox</groupId>
             <artifactId>messages</artifactId>

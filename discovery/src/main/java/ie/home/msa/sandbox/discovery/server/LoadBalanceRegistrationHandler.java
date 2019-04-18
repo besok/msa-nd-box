@@ -21,7 +21,7 @@ public class LoadBalanceRegistrationHandler implements RegistrationHandler {
         String address = service.getAddress();
         String strategy = message.getBody().getProperty("load-balance-strategy");
         if (strategy != null) {
-            storage.put(servName,new LoadBalancerData(strategy,address));
+            storage.put(servName,new LoadBalancerData(address,strategy));
         }
         else{
             storage.removeKey(servName);

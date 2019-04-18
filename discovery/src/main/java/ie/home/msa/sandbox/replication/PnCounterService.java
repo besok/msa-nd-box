@@ -1,77 +1,71 @@
 package ie.home.msa.sandbox.replication;
 
 import ie.home.msa.crdt.PnCounter;
-import ie.home.msa.crdt.PnCounterImpl;
 import ie.home.msa.sandbox.discovery.client.DiscoveryClient;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-
+/**
+ * base service for counter. it has 2 implementation:
+ * operation based : @see {@link PnCounterOperationBasedService}
+ * state based @see {@link PnCounterStateBasedService}
+ */
 @Slf4j
-@RestController
-public class PnCounterService {
+public abstract class PnCounterService {
 
-    @Value("${data-replication-node-count}")
-    private String nodeCount;
-
-    private PnCounter pnCounter;
-    private DiscoveryClient discoveryClient;
+    protected DiscoveryClient discoveryClient;
+    protected PnCounter pnCounter;
+    protected int localIdx;
     private String[] nodes;
-    private int localIdx;
-    public PnCounterService(DiscoveryClient discoveryClient) {
+
+    public PnCounterService(DiscoveryClient discoveryClient, PnCounter pnCounter, String[] nodes, int localIdx) {
         this.discoveryClient = discoveryClient;
+        this.pnCounter = pnCounter;
+        this.nodes = nodes;
+        this.localIdx = localIdx;
     }
 
-    @RequestMapping(path = "/crdt/init", method = RequestMethod.GET)
-    public void initialization() {
-        this.nodes = discoveryClient.getNodes();
-        this.localIdx = discoveryClient.findIdx(nodes);
-        int nodeCount = Integer.parseInt(this.nodeCount);
-        this.pnCounter = new PnCounterImpl(nodeCount, this.localIdx);
-        log.info("init pn-counter, nodes: {}, local index: {}", nodeCount, this.localIdx);
+    public long value() {
+        return pnCounter.value();
     }
 
+    public abstract void increment();
+    public abstract void decrement();
 
-    @RequestMapping(path = "/crdt/pncounter/inc", method = RequestMethod.GET)
-    public void increment() {
-        PnCounter.Effector effector = pnCounter.generate(PnCounter.Op.INCREMENT);
-        log.info(" increment node: {}",this.localIdx);
-        updateNodes(effector);
-    }
-
-    private void updateNodes(PnCounter.Effector effector) {
+    protected void updateNodes(PnCounter.Effector effector) {
         RestTemplate restTemplate = discoveryClient.getRestTemplate();
-
+        int ind = 0;
         for (String node : nodes) {
-            String url = "http://" + node + "/crdt/pncounter/update";
-            restTemplate.postForLocation(url, effector);
-            log.info(" sending delta to {}", url);
+            if (ind != localIdx) {
+                String url = "http://" + node + "/crdt/counter/update";
+                restTemplate.postForLocation(url, effector);
+                log.info(" sending delta to {}", url);
+            }
+            ind++;
         }
     }
-
-    @RequestMapping(path = "/crdt/pncounter/dec", method = RequestMethod.GET)
-    public void decrement() {
-        PnCounter.Effector effector = pnCounter.generate(PnCounter.Op.DECREMENT);
-        log.info(" decrement node: {}",this.localIdx);
-        updateNodes(effector);
-
+    protected void mergeNodes(PnCounter.State state) {
+        RestTemplate restTemplate = discoveryClient.getRestTemplate();
+        int ind = 0;
+        for (String node : nodes) {
+            if (ind != localIdx) {
+                String url = "http://" + node + "/crdt/counter/merge";
+                restTemplate.postForLocation(url, state);
+                log.info(" sending state to {}", url);
+            }
+            ind++;
+        }
     }
-
-
-
-
-    @RequestMapping(path = "/crdt/pncounter/update", method = RequestMethod.POST)
-    public boolean update(@RequestBody PnCounter.Effector effector) {
-        log.info(" getting update : state before {}",pnCounter);
+    protected void merge(PnCounter.State state) {
+        log.info(" getting update : state before {}, state {}", pnCounter, state);
+        pnCounter.merge(state);
+        log.info(" getting update : state after {}", pnCounter);
+    }
+    protected void update(@RequestBody PnCounter.Effector effector) {
+        log.info(" getting update : state before {}", pnCounter);
         pnCounter.update(effector);
-        log.info(" getting update : state after {}",pnCounter);
-        return true;
+        log.info(" getting update : state after {}", pnCounter);
     }
+
 }

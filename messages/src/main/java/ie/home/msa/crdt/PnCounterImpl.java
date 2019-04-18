@@ -30,7 +30,7 @@ public class PnCounterImpl implements PnCounter {
 
     @Override
     public void update(Effector effector) {
-        effector.effect(incArr,decArr);
+        effector.effect(incArr, decArr);
     }
 
     @Override
@@ -38,11 +38,11 @@ public class PnCounterImpl implements PnCounter {
         switch (op) {
             case INCREMENT: {
                 incArr[idx]++;
-                return PnCounter.incEffector(idx);
+                return new Effector(Op.INCREMENT, idx);
             }
             case DECREMENT: {
                 decArr[idx]++;
-                return PnCounter.decEffector(idx);
+                return new Effector(Op.DECREMENT, idx);
             }
             default:
                 return null;
@@ -50,9 +50,14 @@ public class PnCounterImpl implements PnCounter {
     }
 
     @Override
-    public synchronized void merge(long[] incArr, long[] decArr) {
-        this.incArr = mergeMax(this.incArr, incArr);
-        this.decArr = mergeMax(this.decArr, decArr);
+    public synchronized void merge(State state) {
+        this.incArr = mergeMax(this.incArr, state.getIncArr());
+        this.decArr = mergeMax(this.decArr, state.getDecArr());
+    }
+
+    @Override
+    public State state() {
+        return new State(incArr,decArr);
     }
 
     private long[] mergeMax(long[] left, long[] right) {
