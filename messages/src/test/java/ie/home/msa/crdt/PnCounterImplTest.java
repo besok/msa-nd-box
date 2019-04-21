@@ -3,11 +3,15 @@ package ie.home.msa.crdt;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+
 import static ie.home.msa.crdt.PnCounter.*;
 
 public class PnCounterImplTest {
     @Test
-    public void name() {
+    public void commonTest() {
 
         long[] incArrInit = {0,6,1,0,0};
         long[] incArrLeft = {0,0,0,0,1};
@@ -16,20 +20,13 @@ public class PnCounterImplTest {
         pnCounterBase.generate(Op.INCREMENT);
         pnCounterBase.generate(Op.INCREMENT);
         pnCounterBase.generate(Op.INCREMENT);
-        pnCounterBase.merge(incArrInit,incArrLeft);
+        pnCounterBase.merge(new State(incArrInit,incArrLeft));
         long value = pnCounterBase.value();
         Assert.assertEquals(value,6);
 
-        pnCounterBase.update((incArr, decArr) -> {
-            for (int i = 0; i < 5; i++) {
-                incArr[i]=0;
-                decArr[i]=0;
-            }
-            incArr[0]=1;
-        });
+        pnCounterBase.update(new Effector(Op.INCREMENT,0));
 
-        Assert.assertEquals(pnCounterBase.value(),1);
+        Assert.assertEquals(pnCounterBase.value(),7);
     }
-
 
 }

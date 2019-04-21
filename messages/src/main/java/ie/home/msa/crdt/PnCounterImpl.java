@@ -13,6 +13,7 @@ public class PnCounterImpl implements PnCounter {
     private long[] incArr;
     private long[] decArr;
 
+    @Override
     public synchronized long value() {
         long inc = LongStream.of(incArr).sum();
         long dec = LongStream.of(decArr).sum();
@@ -29,7 +30,7 @@ public class PnCounterImpl implements PnCounter {
     }
 
     @Override
-    public void update(Effector effector) {
+    public synchronized void update(Effector effector) {
         effector.effect(incArr, decArr);
     }
 
@@ -56,7 +57,7 @@ public class PnCounterImpl implements PnCounter {
     }
 
     @Override
-    public State state() {
+    public synchronized State state() {
         return new State(incArr,decArr);
     }
 

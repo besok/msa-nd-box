@@ -7,6 +7,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="crdtservice" />
         <module name="discovery" />
         <module name="discovery-admin-service" />
         <module name="greeting-service" />
@@ -20,6 +21,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="crdtservice" options="-parameters" />
       <module name="discovery" options="-parameters" />
       <module name="discovery-admin-service" options="-parameters" />
       <module name="discoveryadminservice" options="-parameters" />

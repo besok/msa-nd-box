@@ -1,10 +1,8 @@
-package ie.home.msa.sandbox.replication;
+package ie.home.sandbox.crdt;
 
 import ie.home.msa.crdt.PnCounter;
 import ie.home.msa.sandbox.discovery.client.DiscoveryClient;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.client.RestTemplate;
 
 import static ie.home.msa.crdt.PnCounter.Op.DECREMENT;
 import static ie.home.msa.crdt.PnCounter.Op.INCREMENT;

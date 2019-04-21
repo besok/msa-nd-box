@@ -1,4 +1,4 @@
-package ie.home.msa.sandbox.replication;
+package ie.home.sandbox.crdt;
 
 import ie.home.msa.crdt.PnCounter;
 import ie.home.msa.sandbox.discovery.client.DiscoveryClient;
