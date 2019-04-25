@@ -38,18 +38,21 @@ public class LoadBalanceResolver {
 
     public GetServiceMessage resolve(String service, List<String> address) {
         List<LoadBalancerData> loadBalancerData = storage.get(service);
+        GetServiceMessage message;
         if (Objects.nonNull(loadBalancerData) && !loadBalancerData.isEmpty()) {
             String strategy = loadBalancerData.get(0).getStrategy();
-            return switchUp(strategy).process(service, address);
+            message = switchUp(strategy).process(service, address);
         } else {
-            return switchUp( "").process(service, address);
+            message = switchUp("").process(service, address);
         }
+        log.info(" return message {} for service {}", message, service);
+        return message;
     }
 
 
-    private Processor switchUp( String strategy) {
+    private Processor switchUp(String strategy) {
         LoadBalanceStrategy str = LoadBalanceStrategy.from(strategy)
-                .orElseThrow(RuntimeException::new);
+                .orElse(LoadBalanceStrategy.RANDOM);
 
         switch (str) {
             case ROBIN:

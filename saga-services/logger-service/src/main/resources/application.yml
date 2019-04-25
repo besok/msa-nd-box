@@ -1,0 +1,4 @@
+spring.application.name: logger-service
+
+service-discovery.admin.address: http://10.0.75.1:9000
+server.port: 0

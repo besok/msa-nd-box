@@ -1,9 +1,9 @@
-#### Simple implementation msa patterns
+#### Simple implementation msa patterns based on spring boot
 - health + metrics
 - messaging
 - service discovery
 - active-active + crdt
     - pncounter
-
-#### TODO
-- tests
+    - lwwregister
+- saga
+    - event based

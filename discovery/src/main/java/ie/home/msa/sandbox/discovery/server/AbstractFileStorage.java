@@ -31,8 +31,7 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
     private StorageListenerHandler listenerHandler;
 
 
-
-    public AbstractFileStorage(String directory,StorageListenerHandler handler) {
+    public AbstractFileStorage(String directory, StorageListenerHandler handler) {
         this.storeName = directory;
         lock = new ReentrantLock();
         memoryServices = new HashMap<>();
@@ -43,7 +42,7 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
 
 
     public List<T> get(String service) {
-        listenerHandler.onEvent(GET,service,storeName,null);
+        listenerHandler.onEvent(GET, service, storeName, null);
         return memoryServices.get(service);
     }
 
@@ -70,9 +69,9 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
                 values.add(val);
             }
             memoryServices.put(key, values);
-            rewriteToFile(file,toFile(values));
+            rewriteToFile(file, toFile(values));
             log.info("put to store: {}, key: {}, val: {}", storageName, key, val);
-            listenerHandler.onEvent(PUT,storageName,key,val);
+            listenerHandler.onEvent(PUT, storageName, key, val);
         } catch (IOException e) {
             log.info("failed operation is put to store: {}, key: {}, val: {}", storageName, key, e);
             return false;
@@ -89,7 +88,7 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
             memoryServices.remove(key);
             Files.deleteIfExists(store.resolve(key));
             log.info("delete a key: {} from storage: {} ", key, storeName);
-            listenerHandler.onEvent(REMOVE_KEY,storeName,key,null);
+            listenerHandler.onEvent(REMOVE_KEY, storeName, key, null);
             return true;
         } catch (IOException e) {
             log.info("exception delete file {} from storage: {}", key, storeName, e);
@@ -104,6 +103,9 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
         lock.lock();
         try {
             List<T> vals = memoryServices.get(key);
+            if (Objects.isNull(vals)) {
+                vals = new ArrayList<>();
+            }
             List<T> tempVals = new ArrayList<>(vals);
             for (T v : tempVals) {
                 if (equal(v, val)) {
@@ -118,7 +120,7 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
                 log.info(" delete a pair key: {}, value: {} from storage: {}", key, val, storeName);
                 rewriteToFile(store.resolve(key), toFile(vals));
             }
-            listenerHandler.onEvent(REMOVE_VAL,storeName,key,val);
+            listenerHandler.onEvent(REMOVE_VAL, storeName, key, val);
             return true;
         } catch (IOException e) {
             log.info("exception when delete a pair key: {},value: {} from storage: {} ", key, val, storeName, e);
@@ -145,11 +147,12 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
             }
             memoryServices.clear();
             log.info("storage {} has been cleaned", store.getFileName().toString());
-            listenerHandler.onEvent(CLEAN,storeName,null,null);
+            listenerHandler.onEvent(CLEAN, storeName, null, null);
         } finally {
             lock.unlock();
         }
     }
+
     @PostConstruct
     protected void init() throws IOException {
         if (Files.notExists(store)) {
@@ -172,24 +175,27 @@ public abstract class AbstractFileStorage<T> implements FileStorage<T> {
                 }
             });
         }
-        listenerHandler.onEvent(INIT,storeName,null,null);
+        listenerHandler.onEvent(INIT, storeName, null, null);
     }
 
     protected abstract List<T> fromFile(List<String> params);
+
     protected abstract List<String> toFile(List<T> params);
+
     protected abstract boolean equal(T left, T right);
 
     protected Path getStore() {
         return store;
     }
+
     protected Map<String, List<T>> getMemoryServices() {
         return new HashMap<>(memoryServices);
     }
 
 
-    private void rewriteToFile(Path filePath,List<String> vals) throws IOException {
+    private void rewriteToFile(Path filePath, List<String> vals) throws IOException {
         Files.deleteIfExists(filePath);
         Files.createFile(filePath);
-        Files.write(filePath,vals, WRITE);
+        Files.write(filePath, vals, WRITE);
     }
 }
