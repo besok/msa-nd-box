@@ -28,8 +28,8 @@ public class ChapterBeanPostProcessor implements BeanPostProcessor {
             Method process = null, rollback = null;
             Method[] declaredMethods = aClass.getDeclaredMethods();
             for (Method method : declaredMethods) {
-                Process pr = method.getAnnotation(Process.class);
-                Rollback rlb = method.getAnnotation(Rollback.class);
+                ChapterAction pr = method.getAnnotation(ChapterAction.class);
+                ChapterRollback rlb = method.getAnnotation(ChapterRollback.class);
                 if(Objects.nonNull(pr)){
                     process = method;
                 }

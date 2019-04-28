@@ -36,6 +36,10 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
     private RestTemplate restTemplate;
     private int port;
 
+    public String getServiceName() {
+        return serviceName;
+    }
+
     @Autowired
     public DiscoveryClient(HealthAggregator aggregator) {
         this.aggregator = aggregator;

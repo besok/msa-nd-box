@@ -1,0 +1,4 @@
+spring.application.name: saga-orchestrator
+
+service-discovery.admin.address: http://10.0.75.1:9000
+server.port: 10000

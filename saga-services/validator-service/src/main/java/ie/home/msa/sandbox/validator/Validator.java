@@ -1,7 +1,7 @@
 package ie.home.msa.sandbox.validator;
 
-import ie.home.msa.sandbox.saga.Process;
-import ie.home.msa.sandbox.saga.Rollback;
+import ie.home.msa.sandbox.saga.ChapterAction;
+import ie.home.msa.sandbox.saga.ChapterRollback;
 import ie.home.msa.sandbox.saga.SagaChapter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -9,13 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Validator {
 
-    @Process
+    @ChapterAction
     public boolean validate(String validateName) {
         log.info("validation for {} is successful",validateName);
         return true;
     }
 
-    @Rollback
+    @ChapterRollback
     public void validateRollback(String validateName){
         log.info("validation rollback for {} is not necessary", validateName);
     }

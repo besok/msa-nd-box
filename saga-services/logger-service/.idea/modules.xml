@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/logger-service.iml" filepath="$PROJECT_DIR$/logger-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/logger-service.iml" filepath="$PROJECT_DIR$/logger-service.iml" />
     </modules>
   </component>
 </project>

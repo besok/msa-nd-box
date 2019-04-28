@@ -11,13 +11,36 @@ import static org.junit.Assert.*;
 public class SagaControllerTest {
 
     @Test
-    public void tempTest() {
+    public void tempEventTest() {
         RestTemplate restTemplate = new RestTemplate();
         Saga saga = new Saga();
-        saga.addChapter(new Chapter("create","creator-service",Status.READY,"test-data"));
-        saga.addChapter(new Chapter("validate","validator-service",Status.READY,"test-data"));
-        saga.addChapter(new Chapter("log","logger-service",Status.READY,"test-data"));
+        saga
+                .addChapter(new Chapter("create", "creator-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("validate", "validator-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("log", "logger-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("diff_creator", "creator-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("validate", "validator-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("log", "logger-service", Status.READY, "test-data"))
+        ;
 
-        restTemplate.postForEntity("http://localhost:62417/saga/event",saga,Boolean.class);
+        restTemplate.postForEntity("http://localhost:53530/saga/event", saga, Boolean.class);
     }
+    @Test
+    public void tempOrchTest() {
+        RestTemplate restTemplate = new RestTemplate();
+        Saga saga = new Saga();
+        saga
+                .addChapter(new Chapter("create", "creator-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("validate", "validator-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("log", "logger-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("diff_creator", "creator-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("validate", "validator-service", Status.READY, "test-data"))
+                .addChapter(new Chapter("log", "logger-service", Status.READY, "test-data"))
+        ;
+
+        restTemplate.postForEntity("http://localhost:10000/saga/run", saga, Boolean.class);
+    }
+
+
+
 }

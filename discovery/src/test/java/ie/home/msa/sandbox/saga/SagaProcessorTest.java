@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class ChapterProcessorTest {
+public class SagaProcessorTest {
 
     @Test
     public void processChapter() {

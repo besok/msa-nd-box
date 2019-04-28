@@ -16,6 +16,7 @@
         <module name="greetingservice" />
         <module name="logger-service" />
         <module name="messages" />
+        <module name="saga-orchestraor" />
         <module name="validator-service" />
       </profile>
     </annotationProcessing>
@@ -35,6 +36,7 @@
       <module name="greetingservice" options="-parameters" />
       <module name="logger-service" options="-parameters" />
       <module name="messages" options="-parameters" />
+      <module name="saga-orchestraor" options="-parameters" />
       <module name="saga-services" options="-parameters" />
       <module name="validator-service" options="-parameters" />
     </option>

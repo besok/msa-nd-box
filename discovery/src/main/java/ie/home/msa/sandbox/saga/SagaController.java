@@ -1,5 +1,6 @@
 package ie.home.msa.sandbox.saga;
 
+import ie.home.msa.saga.Chapter;
 import ie.home.msa.saga.Saga;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,11 +15,12 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class SagaController {
 
-    private final ChapterProcessor processor;
-
+    private final SagaProcessor processor;
+    private final ChapterProcessor chapterProcessor;
     @Autowired
-    public SagaController(ChapterProcessor processor) {
+    public SagaController(SagaProcessor processor, ChapterProcessor chapterProcessor) {
         this.processor = processor;
+        this.chapterProcessor = chapterProcessor;
     }
 
     @RequestMapping(path = "/saga/event", method = RequestMethod.POST)
@@ -26,6 +28,12 @@ public class SagaController {
         CompletableFuture.runAsync(() -> processor.process(saga));
         return true;
     }
+    @RequestMapping(path = "/saga/ch", method = RequestMethod.POST)
+    private Chapter processChapter(@RequestBody Chapter chapter) {
+        return chapterProcessor.handle(chapter);
+    }
+
+
 
 
 }

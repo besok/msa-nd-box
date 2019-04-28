@@ -37,10 +37,16 @@ public class Saga implements Serializable {
         currentChapter = 0;
     }
 
-    public void addChapter(Chapter chapter){
+    public Saga addChapter(Chapter chapter){
         chapters.add(chapter);
+        return this;
     }
 
+    public void updateCurrentChapter(Chapter chapter){
+        if(currentChapter > -1 && currentChapter < size()){
+            chapters.set(currentChapter,chapter);
+        }
+    }
     public List<Chapter> getChapters() {
         return chapters;
     }

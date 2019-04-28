@@ -1,8 +1,11 @@
 package ie.home.msa.sandbox.discovery.server;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+
+import javax.validation.Valid;
 
 import static ie.home.msa.sandbox.discovery.server.StorageListenerHandler.FileStorageType.CIRCUIT_BREAKER;
 
@@ -10,6 +13,8 @@ import static ie.home.msa.sandbox.discovery.server.StorageListenerHandler.FileSt
 @Slf4j
 public class CircuitBreakerFailedListener implements StorageListener {
 
+    @Value("${services.remove-after:3}")
+    private String effortCount;
 
     private final CircuitBreakerFileStorage cbStorage;
     private final ServiceRegistryFileStorage srStorage;
@@ -27,10 +32,12 @@ public class CircuitBreakerFailedListener implements StorageListener {
 
     @Override
     public <T> void onEvent(Event event, String service, String key, T val) {
+        int count = Integer.parseInt(effortCount);
+
         if(service.equals(CIRCUIT_BREAKER.getName()) && (event == Event.PUT)){
             CircuitBreakerData data = (CircuitBreakerData) val;
             String address = data.getAddress();
-            if(data.getVersion() > 5){
+            if(data.getVersion() > count){
                 log.info("service {} with address {} is unavailable long time. The service will be removed",
                         service,address);
                 cbStorage.removeVal(key,data);
