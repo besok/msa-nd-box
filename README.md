@@ -7,3 +7,4 @@
     - lwwregister
 - saga
     - event based
+    - orchestrator based
