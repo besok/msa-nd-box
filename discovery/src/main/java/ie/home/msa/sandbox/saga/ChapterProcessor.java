@@ -47,9 +47,9 @@ public class ChapterProcessor {
         return chapter;
     }
 
-    public Chapter handle(Chapter chapter){
+    public Chapter handle(Chapter chapter) {
         Status status = chapter.getStatus();
-        switch (status){
+        switch (status) {
             case RUN:
             case READY:
                 return processChapter(chapter);

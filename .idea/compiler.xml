@@ -16,6 +16,7 @@
         <module name="greetingservice" />
         <module name="logger-service" />
         <module name="messages" />
+        <module name="resource-manager" />
         <module name="saga-orchestraor" />
         <module name="validator-service" />
       </profile>
@@ -26,6 +27,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="batch-processing" options="-parameters" />
       <module name="crdt-service" options="-parameters" />
       <module name="crdtservice" options="-parameters" />
       <module name="creator-service" options="-parameters" />
@@ -36,6 +38,7 @@
       <module name="greetingservice" options="-parameters" />
       <module name="logger-service" options="-parameters" />
       <module name="messages" options="-parameters" />
+      <module name="resource-manager" options="-parameters" />
       <module name="saga-orchestraor" options="-parameters" />
       <module name="saga-services" options="-parameters" />
       <module name="validator-service" options="-parameters" />

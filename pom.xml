@@ -15,6 +15,7 @@
         <module>discovery-admin-service</module>
         <module>crdt-service</module>
         <module>saga-services</module>
+        <module>batch-processing</module>
     </modules>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
