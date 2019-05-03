@@ -1,4 +1,6 @@
 *.iml
+*/*.iml
+**/*.iml
 */.idea/**
 **/.idea/**
 */target/**
