@@ -5,9 +5,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class EmptyInitializationHandler implements InitializationHandler {
+public class EmptyInitializationOperation implements InitializationOperation {
     @Override
-    public boolean initialization() {
+    public Boolean operate() {
         log.info(" init marker ");
         return true;
     }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 
+import static ie.home.msa.messages.ServiceMetricsMessage.Metrics;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 @Component
@@ -18,8 +19,8 @@ public class SecondsFromStartMetric implements HMetrics {
     }
 
     @Override
-    public ie.home.msa.messages.ServiceMetricsMessage.Metrics metric() {
-        return ie.home.msa.messages.ServiceMetricsMessage.Metrics.single(
+    public Metrics metric() {
+        return Metrics.single(
                 "seconds-from-start",
                 Math.toIntExact(SECONDS.between(ldtStart, LocalDateTime.now())));
     }

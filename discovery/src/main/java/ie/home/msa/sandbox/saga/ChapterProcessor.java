@@ -12,11 +12,9 @@ import java.lang.reflect.InvocationTargetException;
 @Slf4j
 public class ChapterProcessor {
     private final ChapterInvoker invoker;
-    private final DiscoveryClient discoveryClient;
 
-    public ChapterProcessor(ChapterInvoker invoker, DiscoveryClient discoveryClient) {
+    public ChapterProcessor(ChapterInvoker invoker) {
         this.invoker = invoker;
-        this.discoveryClient = discoveryClient;
     }
 
     private Chapter processChapter(Chapter chapter) {
