@@ -1,7 +1,6 @@
 package ie.home.msa.sandbox.discovery.client;
 
 import ie.home.msa.messages.ServiceMetricsMessage;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,13 +11,10 @@ import java.util.List;
 public class HealthRestPoint {
 
 
-    private final List<InitializationHandler> initializationHandlers;
     private final HealthAggregator aggregator;
     private final ApplicationRestarter restarter;
 
-    public HealthRestPoint(List<InitializationHandler> initializationHandlers,
-                           HealthAggregator aggregator, ApplicationRestarter restarter) {
-        this.initializationHandlers = initializationHandlers;
+    public HealthRestPoint(HealthAggregator aggregator, ApplicationRestarter restarter) {
         this.aggregator = aggregator;
         this.restarter = restarter;
     }
@@ -30,17 +26,15 @@ public class HealthRestPoint {
 
     @RequestMapping(path = "/init",method = RequestMethod.GET)
     public Boolean init(){
-        boolean result = true;
-        for (InitializationHandler initializationHandler : initializationHandlers) {
-            if(!initializationHandler.initialization()){
-                result = false;
-            }
-        }
-        return result;
+        return restarter.init();
     }
 
     @RequestMapping(path = "/close",method = RequestMethod.GET)
-    public void restart(){
-        restarter.close();
+    public boolean close(){
+        return restarter.close();
+    }
+    @RequestMapping(path = "/close/now",method = RequestMethod.GET)
+    public boolean closeImmediately(){
+        return restarter.closeImmediately();
     }
 }

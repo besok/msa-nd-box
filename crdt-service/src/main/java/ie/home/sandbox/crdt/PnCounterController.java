@@ -4,7 +4,7 @@ import ie.home.msa.crdt.CRDTException;
 import ie.home.msa.crdt.PnCounter;
 import ie.home.msa.crdt.PnCounterImpl;
 import ie.home.msa.sandbox.discovery.client.DiscoveryClient;
-import ie.home.msa.sandbox.discovery.client.InitializationHandler;
+import ie.home.msa.sandbox.discovery.client.InitializationOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Slf4j
-public class PnCounterController implements InitializationHandler {
+public class PnCounterController implements InitializationOperation {
 
     private PnCounterService service;
     private DiscoveryClient discoveryClient;
@@ -24,7 +24,7 @@ public class PnCounterController implements InitializationHandler {
     }
 
     @Override
-    public boolean initialization() {
+    public Boolean operate() {
         String[] nodes = discoveryClient.getNodes();
         int idx = discoveryClient.findIdx(nodes);
         if(idx < 0){
