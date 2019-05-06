@@ -1,0 +1,6 @@
+spring.application.name: batch-resource-manager-service
+server.port: 9999
+service-discovery.admin.address: http://10.0.75.1:9000
+services.remove-after: 1
+
+batch.worker.jar: C:\projects\msa-nd-box\batch-processing\worker-service\target\worker-service-1.0.jar
