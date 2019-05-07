@@ -1,18 +1,25 @@
 package ie.home.msa.lab.batch;
 
+import ie.home.msa.sandbox.discovery.server.StorageListener;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static ie.home.msa.sandbox.discovery.server.StorageListenerHandler.FileStorageType.SERVICE_REGISTRY;
+
 @Service
-public class Workers {
+@Slf4j
+public class Workers implements StorageListener {
     private List<Worker> workerList;
 
+    public List<Worker> getWorkerList() {
+        return workerList;
+    }
 
-    public int size(){
+    private int id() {
         return workerList.size();
     }
 
@@ -20,18 +27,29 @@ public class Workers {
         workerList = new CopyOnWriteArrayList<>();
     }
 
-    public void add(Worker worker){
+    void add(Worker worker) {
+        log.info(" add worker {} ", worker);
         workerList.add(worker);
     }
 
-    public Optional<Worker> findBy(String address){
-       return workerList.stream().filter(w -> w.getAddress().equals(address)).findFirst();
-    }
-
-    public void destroy(String address){
-        findBy(address).ifPresent(Worker::destroy);
+    private void remove(String address) {
+        boolean res = workerList.removeIf(w -> w.getAddress().equals(address));
+        log.info(" remove worker {} = {}", address, res);
     }
 
 
-
+    @Override
+    public <T> void onEvent(Event event, String storage, String key, T val) {
+        if (Objects.equals(storage, SERVICE_REGISTRY.getName())) {
+            switch (event) {
+                case PUT:
+                    add(new Worker(id(), (String) val));
+                    break;
+                case REMOVE_VAL:
+                    remove((String) val);
+                    break;
+                default:
+            }
+        }
+    }
 }

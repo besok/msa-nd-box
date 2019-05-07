@@ -1,19 +1,14 @@
 package ie.home.msa.lab.batch;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
@@ -22,46 +17,29 @@ public class ServiceInitializer {
     @Value("${batch.worker.jar}")
     private String jar;
 
-    private Workers workers;
+    private AtomicInteger id;
     private ExecutorService executor;
 
-    public ServiceInitializer(Workers workers) {
-        this.workers = workers;
-        this.executor = Executors.newFixedThreadPool(10);
+    public ServiceInitializer() {
+        this.id = new AtomicInteger(0);
+        this.executor = Executors.newFixedThreadPool(20);
     }
 
-    public void newWorker() throws ExecutionException, InterruptedException {
-        Future<Optional<Worker>> result = executor.submit(run(workers.size()));
-        Optional<Worker> workerOpt = result.get();
-        workerOpt.ifPresent(workers::add);
-    }
-
-    private Callable<Optional<Worker>> run(int id) {
-        return () -> {
+    public void newWorker() {
+        executor.submit(() -> {
             try {
-                Process p = pb().start();
-                Worker w = new Worker();
-                w.setProcess(p);
-                w.setId(id);
-                processLog(id, p);
-                return Optional.of(w);
+                Process p = new ProcessBuilder("java", "-server", "-jar", jar).start();
+                BufferedReader is = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                int idNode = id.incrementAndGet();
+                String line;
+                while ((line = is.readLine()) != null) {
+                    log.info("w_id[{}]: {} ", idNode, line);
+                }
             } catch (IOException e) {
                 log.error(" error while start new worker ", e);
             }
-            return Optional.empty();
-        };
-    }
-
-    private void processLog(int id, Process p) throws IOException {
-        BufferedReader is = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String line;
-        while ((line = is.readLine()) != null) {
-            log.info("w_id[{}]: {} ", id, line);
-        }
+        });
     }
 
 
-    private ProcessBuilder pb() {
-        return new ProcessBuilder("java", "-server", "-jar", jar);
-    }
 }

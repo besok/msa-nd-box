@@ -1,28 +1,8 @@
 package ie.home.msa.lab.batch;
 
 public class Worker {
-    private String address;
-    private Process process;
     private int id;
-
-
-
-    public Worker() {
-    }
-
-
-    public void destroy(){
-        process.destroy();
-    }
-
-
-    @Override
-    public String toString() {
-        return "Worker{" +
-                "address='" + address + '\'' +
-                ", process=" + process +
-                '}';
-    }
+    private String address;
 
     public int getId() {
         return id;
@@ -40,11 +20,19 @@ public class Worker {
         this.address = address;
     }
 
-    public Process getProcess() {
-        return process;
+    public Worker() {
     }
 
-    public void setProcess(Process process) {
-        this.process = process;
+    public Worker(int id, String address) {
+        this.id = id;
+        this.address = address;
+    }
+
+    @Override
+    public String toString() {
+        return "Worker{" +
+                "id=" + id +
+                ", address='" + address + '\'' +
+                '}';
     }
 }
