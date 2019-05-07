@@ -3,11 +3,13 @@ package ie.home.msa.sandbox.saga;
 import ie.home.msa.saga.Chapter;
 import ie.home.msa.saga.Saga;
 import ie.home.msa.saga.Status;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.web.client.RestTemplate;
 
 import static org.junit.Assert.*;
 
+@Ignore
 public class SagaControllerTest {
 
     @Test

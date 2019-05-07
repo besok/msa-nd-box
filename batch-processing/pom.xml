@@ -12,7 +12,8 @@
     <artifactId>batch-processing</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>resource-manager</module>
+        <module>resource-manager-service</module>
+        <module>worker-service</module>
     </modules>
 
     <dependencies>

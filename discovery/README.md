@@ -3,5 +3,6 @@
 - load balancer
 - saga orchestrator
 - saga 
+- resource manager
 ----
 

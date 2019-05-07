@@ -60,13 +60,27 @@ public class ServiceController {
             ResponseEntity<Boolean> ent = restTemplate.getForEntity("http://" + address + "/init", Boolean.class);
             if (ent.getStatusCode().isError()) {
                 res.add(false);
-            }else{
+            } else {
                 res.add(ent.getBody());
             }
         }
         return res;
     }
 
+    @RequestMapping(path = "/services/{service}/close", method = RequestMethod.GET)
+    public void closeService(@PathVariable String service) {
+        RestTemplate restTemplate = new RestTemplate();
+        log.info("close service {}", service);
+        getAddresses(service)
+                .forEach(a -> {
+                    ResponseEntity<Void> ent = restTemplate.getForEntity("http://" + a + "/close", Void.class);
+                    if (ent.getStatusCode().isError()) {
+                        log.error("error while close service {}", ent.getStatusCode());
+                    } else {
+                        log.info("service is closed");
+                    }
+                });
+    }
 
     private List<String> getAddresses(@PathVariable String service) {
         List<String> addreses;
