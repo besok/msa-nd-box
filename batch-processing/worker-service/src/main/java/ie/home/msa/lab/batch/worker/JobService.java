@@ -21,14 +21,9 @@ public class JobService {
         return work.get() ? 1 : 0;
     }
 
-    public synchronized FileCountTask processTask(FileCountTask task) {
+    public FileCountTask processTask(FileCountTask task) {
         work.set(true);
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        FileCountTask resTask = (FileCountTask) task.process();
+        FileCountTask resTask = task.process();
         work.set(false);
         return resTask;
     }

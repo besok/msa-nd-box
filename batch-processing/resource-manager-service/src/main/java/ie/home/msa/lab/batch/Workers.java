@@ -19,7 +19,7 @@ public class Workers implements StorageListener {
         return workerList;
     }
 
-    private int id() {
+    public int size() {
         return workerList.size();
     }
 
@@ -32,6 +32,8 @@ public class Workers implements StorageListener {
         workerList.add(worker);
     }
 
+
+
     private void remove(String address) {
         boolean res = workerList.removeIf(w -> w.getAddress().equals(address));
         log.info(" remove worker {} = {}", address, res);
@@ -43,7 +45,7 @@ public class Workers implements StorageListener {
         if (Objects.equals(storage, SERVICE_REGISTRY.getName())) {
             switch (event) {
                 case PUT:
-                    add(new Worker(id(), (String) val));
+                    add(new Worker(size(), (String) val));
                     break;
                 case REMOVE_VAL:
                     remove((String) val);

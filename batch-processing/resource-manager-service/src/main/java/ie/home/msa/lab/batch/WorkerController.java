@@ -16,17 +16,14 @@ public class WorkerController {
         this.workerManager = workerManager;
     }
 
-    @RequestMapping(path = "/worker/add", method = RequestMethod.GET)
-    public void newWorker(){
-        workerManager.newWorker();
-    }
-
-    @RequestMapping(path = "/worker/rem", method = RequestMethod.GET)
-    public void closeWorker(){
-        workerManager.removeWorker();
-    }
     @RequestMapping(path = "/worker/task", method = RequestMethod.POST)
-    public void completedTask(@RequestBody FileCountTaskMessage taskMessage){
+    public void intermidiateTask(@RequestBody FileCountTaskMessage taskMessage){
         workerManager.processCompletedTask(taskMessage);
     }
+    @RequestMapping(path = "/task", method = RequestMethod.POST)
+    public long fullTask(@RequestBody FileCountTaskMessage taskMessage){
+        return workerManager.processTask(taskMessage);
+    }
+
+
 }

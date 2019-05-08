@@ -41,16 +41,4 @@ public class WorkerDestroyer implements DestroyOperation {
         }
         return true;
     }
-
-    protected boolean removeFirst(){
-        List<Worker> workers = this.workers.getWorkerList();
-        if(workers.isEmpty()){
-            log.info("workers is empty");
-            return false;
-        }
-
-        int index = workers.size() - 1;
-        Worker worker = workers.remove(index);
-        return removeByAddress(worker.getAddress());
-    }
 }

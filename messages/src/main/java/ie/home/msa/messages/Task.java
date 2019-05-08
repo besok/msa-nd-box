@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface Task<V> extends Serializable {
 
-    List<Task<V>> split();
+   <T extends Task<V>> List<T> split();
 
     Task<V> process();
 

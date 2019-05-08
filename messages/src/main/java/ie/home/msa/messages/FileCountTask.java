@@ -1,5 +1,6 @@
 package ie.home.msa.messages;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,6 +16,8 @@ public class FileCountTask implements Task<Long> {
     private String dirOrFile;
     private Long result;
 
+    public FileCountTask() {
+    }
 
     public FileCountTask(String directory) {
         this.dirOrFile = directory;
@@ -39,7 +42,7 @@ public class FileCountTask implements Task<Long> {
     }
 
     @Override
-    public List<Task<Long>> split() {
+    public List<FileCountTask> split() {
         Path path = Paths.get(dirOrFile);
         if (isDirectory(path)) {
             try( Stream<Path> list = Files.list(path)) {
@@ -61,10 +64,10 @@ public class FileCountTask implements Task<Long> {
     }
 
     @Override
-    public Task<Long> process() {
+    public FileCountTask process() {
         Path path = Paths.get(dirOrFile);
         if(isDirectory(path)){
-            return null;
+            return this;
         }
         try(Stream<String> lines = Files.lines(path)) {
             this.setResult(lines.mapToLong(String::length).sum());
@@ -73,12 +76,20 @@ public class FileCountTask implements Task<Long> {
             e.printStackTrace();
         }
 
-        return null;
+        return this;
     }
 
     @Override
     public synchronized boolean accumulate(Long data) {
         this.result += data;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "FileCountTask{" +
+                "dirOrFile='" + dirOrFile + '\'' +
+                ", result=" + result +
+                '}';
     }
 }

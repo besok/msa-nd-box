@@ -35,19 +35,28 @@ public class WorkerController {
     public void processTask(@RequestBody FileCountTask task) {
         CompletableFuture.runAsync(() -> {
             FileCountTask resTask = jobService.processTask(task);
-            FileCountTaskMessage taskMessage = new FileCountTaskMessage();
-            taskMessage.setBody(resTask);
-            taskMessage.setDsc("");
-            taskMessage.setStatus(TaskStatus.FINISH);
-            taskMessage.setVersion(1);
-            taskMessage.setService(Service.of(serviceName, address));
-            ResponseEntity<Void> resp = restTemplate.postForEntity("http://" + adminAddress + "/worker/task", taskMessage, Void.class);
-            if (resp.getStatusCode().isError()) {
-                log.error(" error to send to admin server {}", taskMessage);
-            } else {
-                log.info(" send to admin server {}", taskMessage);
-            }
+            log.info("task processed {}",resTask);
+            ResponseEntity<Void> resp = restTemplate.postForEntity(adminAddress + "/worker/task", createMessage(resTask), Void.class);
+            withLog(createMessage(resTask), resp);
         });
+    }
+
+    private void withLog(FileCountTaskMessage taskMessage, ResponseEntity<Void> resp) {
+        if (resp.getStatusCode().isError()) {
+            log.info(" error to send to admin server {}", taskMessage);
+        } else {
+            log.info(" send to admin server {}", taskMessage);
+        }
+    }
+
+    private FileCountTaskMessage createMessage(FileCountTask resTask) {
+        FileCountTaskMessage taskMessage = new FileCountTaskMessage();
+        taskMessage.setBody(resTask);
+        taskMessage.setDsc("");
+        taskMessage.setStatus(TaskStatus.FINISH);
+        taskMessage.setVersion(1);
+        taskMessage.setService(Service.of(serviceName, address));
+        return taskMessage;
     }
 
 }

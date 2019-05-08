@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -17,54 +16,79 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class WorkerManager {
     private final WorkerInitializer workerInitializer;
     private final WorkerDestroyer workerDestroyer;
+    private final Workers workers;
+
     private final RestTemplate restTemplate;
     private final AtomicInteger counter;
-
     private Queue<FileCountTask> taskQueue;
     private FileCountTask initTask;
 
     public WorkerManager(WorkerInitializer workerInitializer,
-                         WorkerDestroyer workerDestroyer) {
+                         WorkerDestroyer workerDestroyer,
+                         Workers workers) {
         this.workerInitializer = workerInitializer;
         this.workerDestroyer = workerDestroyer;
+        this.workers = workers;
         this.taskQueue = new ArrayDeque<>();
-        counter = new AtomicInteger(0);
-        restTemplate = new RestTemplate();
+        this.counter = new AtomicInteger(0);
+        this.restTemplate = new RestTemplate();
     }
 
 
-    public synchronized void processTask(FileCountTaskMessage taskMessage) {
+    public boolean isQueueTaskEmpty() {
+        boolean empty = taskQueue.isEmpty();
+        log.info(" the queue is empty {}", empty);
+        return empty;
+
+    }
+
+    public long processTask(FileCountTaskMessage taskMessage) {
         this.initTask = taskMessage.getBody();
-        taskQueue.addAll((Collection<? extends FileCountTask>) initTask.split());
-        while (!taskQueue.isEmpty()) {
-
+        taskQueue.addAll(initTask.split());
+        int delta = 10 - workers.size();
+        if (delta > 0) {
+            for (int i = 0; i < delta; i++) {
+                newWorker();
+            }
         }
-        workerDestroyer.operate();
+        while (!taskQueue.isEmpty() || workers.size() != 0) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return this.initTask.getResult();
+
     }
 
-    public void sendTaskToWorker(FileCountTask task,String address){
+    public void sendTaskToWorker(String address) {
+        FileCountTask task = taskQueue.poll();
         ResponseEntity<Void> resp = restTemplate.postForEntity("http://" + address + "/task", task, Void.class);
-        if(resp.getStatusCode().isError()){
-            log.error(" send task {} to worker {} error {}",task,address,resp.getStatusCode());
-        }else{
-            log.info(" send task {} to worker {} ",task,address);
+        if (resp.getStatusCode().isError()) {
+            log.error(" send task {} to worker {} error {}", task, address, resp.getStatusCode());
+        } else {
+            log.info(" send task {} to worker {} ", task, address);
         }
     }
 
-    public void processCompletedTask(FileCountTaskMessage taskMessage){
-        this.initTask.accumulate(taskMessage.getBody().getResult());
+    public void processCompletedTask(FileCountTaskMessage taskMessage) {
+        Long result = taskMessage.getBody().getResult();
+        log.info("task from service {}",taskMessage.getBody());
+        this.initTask.accumulate(result);
+        log.info("initTask service {}",initTask);
     }
 
     public void newWorker() {
-        if (counter.incrementAndGet() < 10) {
+        if (counter.incrementAndGet() < 11) {
             workerInitializer.newWorker();
-        }else{
-            log.info(" worker count is limited");
         }
     }
 
-    public void removeWorker() {
-        workerDestroyer.removeFirst();
+
+
+    public void removeWorker(String address) {
+        workerDestroyer.removeByAddress(address);
         counter.decrementAndGet();
     }
 

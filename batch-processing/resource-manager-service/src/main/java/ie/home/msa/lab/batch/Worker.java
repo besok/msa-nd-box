@@ -31,7 +31,7 @@ public class Worker {
     @Override
     public String toString() {
         return "Worker{" +
-                "id=" + id +
+                "size=" + id +
                 ", address='" + address + '\'' +
                 '}';
     }

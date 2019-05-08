@@ -1,10 +1,16 @@
 #### Simple implementation msa patterns based on spring boot
 - health + metrics
+    - close and init operations
 - messaging
 - service discovery
+    - storage listeners
 - active-active + crdt
     - pncounter
     - lwwregister
 - saga
     - event based
     - orchestrator based
+- batch processing
+    - workers pool
+    - resource manager
+    - pull task from metric
