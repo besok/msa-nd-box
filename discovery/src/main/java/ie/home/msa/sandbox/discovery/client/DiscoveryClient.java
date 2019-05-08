@@ -36,6 +36,8 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
     private RestTemplate restTemplate;
     private int port;
 
+
+
     public String getServiceName() {
         return serviceName;
     }
@@ -50,6 +52,15 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
         this.port = webServerInitializedEvent.getWebServer().getPort();
         registration();
     }
+
+    public String getAdminAddress() {
+        return adminAddress;
+    }
+
+    public String getServiceAddress() {
+        return address;
+    }
+
 
     public int findIdx(String[] nodes) {
         for (int i = 0; i < nodes.length; i++) {

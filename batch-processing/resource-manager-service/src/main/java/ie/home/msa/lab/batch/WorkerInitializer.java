@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
-public class ServiceInitializer {
+public class WorkerInitializer {
 
     @Value("${batch.worker.jar}")
     private String jar;
@@ -20,7 +20,7 @@ public class ServiceInitializer {
     private AtomicInteger id;
     private ExecutorService executor;
 
-    public ServiceInitializer() {
+    public WorkerInitializer() {
         this.id = new AtomicInteger(0);
         this.executor = Executors.newFixedThreadPool(20);
     }
