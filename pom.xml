@@ -16,6 +16,7 @@
         <module>crdt-service</module>
         <module>saga-services</module>
         <module>batch-processing</module>
+        <module>log-aggregator-service</module>
     </modules>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>

@@ -1,0 +1,3 @@
+spring.application.name: logs-aggregator-service
+server.port: 0
+service-discovery.admin.address: http://10.0.75.1:9000

@@ -2,6 +2,7 @@ package ie.home.msa.lab.batch;
 
 import ie.home.msa.messages.FileCountTask;
 import ie.home.msa.messages.FileCountTaskMessage;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -11,6 +12,7 @@ import static org.junit.Assert.*;
 public class WorkerControllerTest {
 
     @Test
+//    @Ignore
     public void completedTask() {
         RestTemplate restTemplate = new RestTemplate();
         FileCountTaskMessage taskMessage = new FileCountTaskMessage();
