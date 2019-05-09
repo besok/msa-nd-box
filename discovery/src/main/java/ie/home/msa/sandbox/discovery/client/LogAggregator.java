@@ -28,7 +28,7 @@ public class LogAggregator {
 
     public LogAggregator(DiscoveryClient discoveryClient) {
         this.discoveryClient = discoveryClient;
-        logDir = Paths.get(new ClassPathResource("logs").getPath());
+        logDir = Paths.get(new ClassPathResource("service-logs").getPath());
         executor = Executors.newSingleThreadExecutor();
     }
 
@@ -47,7 +47,7 @@ public class LogAggregator {
                         sendLogs(message, address);
                     }
                 } catch (Exception e) {
-                    log.error(" scheduler log error ", e);
+                    log.error(" error while sending logs ", e);
                 }
             }
         });
@@ -57,9 +57,9 @@ public class LogAggregator {
         ResponseEntity<Void> resp =
                 discoveryClient.getRestTemplate().postForEntity("http://" + address + "/logs", message, Void.class);
         if (resp.getStatusCode().isError()) {
-            log.error(" can't send logs to the slog service");
+            log.error(" can't send logs to the logs-aggregator-service");
         } else {
-            log.info(" send logs to the log service");
+            log.info(" send logs to the logs-aggregator-service");
         }
     }
 
@@ -79,8 +79,8 @@ public class LogAggregator {
         List<Path> files = Files.list(logDir).filter(this::isNotCurrentLogFile).collect(Collectors.toList());
         ArrayList<String> logs = new ArrayList<>();
         for (Path file : files) {
-            log.info("file {} will be removed ",file.getFileName().toString());
             logs.addAll(Files.readAllLines(file));
+            log.info("log-file {} has been processed and will be removed ",file.getFileName().toString());
             Files.deleteIfExists(file);
         }
         return logs;
