@@ -15,3 +15,4 @@
     - resource manager
     - pull task from metric
     - complex command (orchestrator / dsl)
+- logs aggregator
