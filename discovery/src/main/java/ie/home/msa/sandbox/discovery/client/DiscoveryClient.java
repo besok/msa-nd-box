@@ -97,15 +97,15 @@ public class DiscoveryClient implements ApplicationListener<WebServerInitialized
 
             message.getBody().putProperty("circuit-breaker", this.circuitBreaker);
             message.getBody().putProperty("load-balance-strategy", this.loadBalance);
-            ResponseEntity<ServiceRegisterMessage> exchange = restTemplate.exchange(URL, HttpMethod.POST,
-                    new HttpEntity<>(message), ServiceRegisterMessage.class);
+            ResponseEntity<ServiceRegisterMessage> exchange =
+                    restTemplate.postForEntity(URL, message, ServiceRegisterMessage.class);
             if (exchange.getStatusCode().isError()) {
                 throw new DiscoveryClientException();
             }
             log.info("registration for {} in service discovery admin is {}",
                     serviceName, exchange.getBody().getStatus());
 
-        } catch (UnknownHostException e) {
+        } catch (Exception e) {
             throw new DiscoveryClientException(e);
         }
     }

@@ -17,6 +17,7 @@
         <module>saga-services</module>
         <module>batch-processing</module>
         <module>log-aggregator-service</module>
+        <module>zab</module>
     </modules>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>

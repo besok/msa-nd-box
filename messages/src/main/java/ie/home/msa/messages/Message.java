@@ -50,4 +50,14 @@ public abstract class Message<E extends Enum<E>,T extends Serializable> implemen
         this.status = status;
     }
 
+    @Override
+    public String toString() {
+        return "Message{" +
+                "version=" + version +
+                ", dsc='" + dsc + '\'' +
+                ", body=" + body +
+                ", status=" + status +
+                ", service=" + service +
+                '}';
+    }
 }

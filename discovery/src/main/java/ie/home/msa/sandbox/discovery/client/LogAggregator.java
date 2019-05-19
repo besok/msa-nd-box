@@ -3,6 +3,7 @@ package ie.home.msa.sandbox.discovery.client;
 import ie.home.msa.messages.GetServiceMessage;
 import ie.home.msa.messages.LogServiceMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,9 @@ import java.util.stream.Collectors;
 public class LogAggregator {
     private final Path logDir;
 
+    @Value("${logs.log-service-name:none}")
+    private String logServiceName;
+
     private final DiscoveryClient discoveryClient;
     private ExecutorService executor;
 
@@ -35,22 +39,24 @@ public class LogAggregator {
 
     @PostConstruct
     public void scheduledThread() {
-        this.executor.submit(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(5000);
-                    List<String> logs = lookAt();
-                    if (!logs.isEmpty()) {
-                        LogServiceMessage message = makeMessage(logs);
-                        GetServiceMessage logger = discoveryClient.getAddress("logs-aggregator-service");
-                        String address = logger.getBody().getAddress();
-                        sendLogs(message, address);
+        if(!logServiceName.equals("none")) {
+            this.executor.submit(() -> {
+                while (true) {
+                    try {
+                        Thread.sleep(5000);
+                        List<String> logs = lookAt();
+                        if (!logs.isEmpty()) {
+                            LogServiceMessage message = makeMessage(logs);
+                            GetServiceMessage logger = discoveryClient.getAddress(logServiceName);
+                            String address = logger.getBody().getAddress();
+                            sendLogs(message, address);
+                        }
+                    } catch (Exception e) {
+                        log.error(" error while sending logs ", e);
                     }
-                } catch (Exception e) {
-                    log.error(" error while sending logs ", e);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void sendLogs(LogServiceMessage message, String address) {

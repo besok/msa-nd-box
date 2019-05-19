@@ -16,3 +16,4 @@
     - pull task from metric
     - complex command (orchestrator / dsl)
 - logs aggregator
+- zab

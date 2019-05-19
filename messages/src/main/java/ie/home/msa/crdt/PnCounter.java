@@ -104,7 +104,7 @@ public interface PnCounter {
 
         @Override
         public String toString() {
-            return "State{" +
+            return "ZNodeState{" +
                     "incArr=" + Arrays.toString(incArr) +
                     ", decArr=" + Arrays.toString(decArr) +
                     '}';
