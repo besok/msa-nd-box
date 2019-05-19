@@ -2,7 +2,7 @@ package ie.home.msa.lab.zab;
 
 import java.util.stream.IntStream;
 
-public class Utils {
+public class ZabUtils {
     static int find(String address, String[]addresses ){
         return IntStream.range(0,address.length()).filter(i -> addresses[i].equals(address)).findAny()
                 .orElseThrow(ElectionException::new);

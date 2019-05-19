@@ -10,9 +10,9 @@ import java.util.concurrent.CompletableFuture;
 @RestController
 public class NodeController {
 
-    private final ElectionProcessor processor;
+    private final ElectionNotificationReceiver processor;
 
-    public NodeController(ElectionProcessor processor) {
+    public NodeController(ElectionNotificationReceiver processor) {
         this.processor = processor;
     }
 
