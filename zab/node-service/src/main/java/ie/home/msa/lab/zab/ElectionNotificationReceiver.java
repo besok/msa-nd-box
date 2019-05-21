@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -25,6 +26,28 @@ public class ElectionNotificationReceiver implements InitializationOperation {
     private Lock lock;
 
     private final DiscoveryClient client;
+
+
+    public ElectionMessage getCurrentMessage() {
+        return currentMessage;
+    }
+
+    public Optional<ElectionMessage> pop() {
+        lock.lock();
+        try {
+            if (electionQueue.isEmpty()) {
+                log.info("get from q = empty");
+                return Optional.empty();
+            } else {
+                ElectionMessage mes = electionQueue.pop();
+                log.info("get from q = {}",mes);
+                return Optional.of(mes);
+            }
+        } finally {
+            lock.unlock();
+        }
+
+    }
 
     public ElectionNotificationReceiver(DiscoveryClient client) {
         this.client = client;
