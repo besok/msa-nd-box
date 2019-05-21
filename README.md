@@ -10,8 +10,8 @@
 - load balancer
 - active-active + crdt
     - pncounter
-        -event based
-        -state based
+        - event based
+        - state based
     - lwwregister
 - saga
     - event based
