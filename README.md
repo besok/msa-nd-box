@@ -1,19 +1,26 @@
-#### Simple implementation msa patterns based on spring boot
-- health + metrics
-    - close and init operations
+#### Simple implementation msa patterns based on spring boot and http(simple async)
+- health + metrics 
+    - close operations
+    - init operations
+    - restart operations
 - messaging
+    - message hierarchy
 - service discovery
-    - storage listeners
+- storage listeners
+- load balancer
 - active-active + crdt
     - pncounter
+        - event based
+        - state based
     - lwwregister
 - saga
     - event based
     - orchestrator based
 - batch processing
-    - workers pool
+    - workers/resource pool
     - resource manager
     - pull task from metric
     - complex command (orchestrator / dsl)
 - logs aggregator
 - zab
+
