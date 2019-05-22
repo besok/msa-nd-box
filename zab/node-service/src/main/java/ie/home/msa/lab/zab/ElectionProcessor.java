@@ -73,10 +73,10 @@ public class ElectionProcessor implements InitializationOperation {
                         }
                         receivedVoteMap.put(mes.getBody().getId(), mes);
                         if (receiver.nodes.length == receivedVoteMap.size()) {
-                            deduceLeader(vote(mes).getId());
+                            deduceLeader(vote(receiver.currentMessage).getId());
                             return;
                         } else if (checkQuorumThisReceivedMap()) {
-                            deduceLeader(id());
+                            deduceLeader(vote(receiver.currentMessage).getId());
                         }
                     } else {
                         if (currentRound == incomeRound) {
