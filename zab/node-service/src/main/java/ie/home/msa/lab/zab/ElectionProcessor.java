@@ -14,8 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static ie.home.msa.zab.ZNodeState.*;
 
@@ -30,7 +28,6 @@ public class ElectionProcessor implements InitializationOperation {
     private final BroadcastProcessor broadcast;
     private final Map<Integer, ElectionMessage> outOfElectionMap;
     private final Map<Integer, ElectionMessage> receivedVoteMap;
-    private final Lock lock;
 
     public ElectionProcessor(ElectionNotificationReceiver receiver,
                              BroadcastProcessor broadcastProcessor) {
@@ -38,7 +35,6 @@ public class ElectionProcessor implements InitializationOperation {
         this.broadcast = broadcastProcessor;
         this.receivedVoteMap = new HashMap<>();
         this.outOfElectionMap = new HashMap<>();
-        this.lock = new ReentrantLock(true);
     }
 
     private void commonThread() {

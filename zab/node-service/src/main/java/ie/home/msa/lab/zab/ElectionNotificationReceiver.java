@@ -83,11 +83,11 @@ public class ElectionNotificationReceiver  {
         ResponseEntity<Void> resp = client.getRestTemplate().postForEntity("http://" + address + "/election",
                 message, Void.class);
         if (resp.getStatusCode().is2xxSuccessful()) {
-            log.info("send message: address {}, sending: {} ", address, message);
+            log.info(" send message: address {}, sending: {} ", address, message);
         } else {
             String phrase = resp.getStatusCode().getReasonPhrase();
             int code = resp.getStatusCodeValue();
-            log.info("error {}-{} send message: incoming:{}, sending: {} ", code, phrase, address, message);
+            log.info(" error {}-{} send message: incoming:{}, sending: {} ", code, phrase, address, message);
         }
     }
 
