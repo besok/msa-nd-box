@@ -3,6 +3,7 @@ package ie.home.msa.lab.zab;
 import ie.home.msa.messages.ElectionMessage;
 import ie.home.msa.sandbox.discovery.client.DiscoveryClient;
 import ie.home.msa.sandbox.discovery.client.InitializationOperation;
+import ie.home.msa.zab.Zid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -19,16 +20,16 @@ import static ie.home.msa.zab.ZNodeState.ELECTION;
 
 @Service
 @Slf4j
-public class ElectionNotificationReceiver implements InitializationOperation {
-    private String[] nodes;
-    private ElectionMessage currentMessage;
+public class ElectionNotificationReceiver  {
+    protected String[] nodes;
+    protected ElectionMessage currentMessage;
+    protected final DiscoveryClient client;
     private Deque<ElectionMessage> electionQueue;
     private Lock lock;
 
-    private final DiscoveryClient client;
 
 
-    public ElectionMessage getCurrentMessage() {
+    public ElectionMessage getState() {
         return currentMessage;
     }
 
@@ -40,7 +41,7 @@ public class ElectionNotificationReceiver implements InitializationOperation {
                 return Optional.empty();
             } else {
                 ElectionMessage mes = electionQueue.pop();
-                log.info("get from q = {}",mes);
+                log.info("get from q = {}", mes);
                 return Optional.of(mes);
             }
         } finally {
@@ -60,47 +61,62 @@ public class ElectionNotificationReceiver implements InitializationOperation {
         log.info(" process message {} ", message);
         lock.lock();
         try {
+            String address = message.getService().getAddress();
             if (currentMessage.getStatus() == ELECTION) {
                 electionQueue.push(message);
                 if (message.getStatus() == ELECTION) {
                     int currentRound = currentMessage.getBody().getRound();
                     int incomingRound = message.getBody().getRound();
                     if (currentRound > incomingRound) {
-                        sendMessage(message);
+                        sendMessage(address, currentMessage);
                     }
                 }
             } else if (message.getStatus() == ELECTION) {
-                sendMessage(message);
+                sendMessage(address, currentMessage);
             }
         } finally {
             lock.unlock();
         }
     }
 
-    public void sendMessage(ElectionMessage incomingMessage) {
-        String address = incomingMessage.getService().getAddress();
-        ResponseEntity<Void> resp = client.getRestTemplate().postForEntity("http://" + address + "/election", currentMessage, Void.class);
+    public void sendMessage(String address, ElectionMessage message) {
+        ResponseEntity<Void> resp = client.getRestTemplate().postForEntity("http://" + address + "/election",
+                message, Void.class);
         if (resp.getStatusCode().is2xxSuccessful()) {
-            log.info("send message: incoming:{}, sending: {} ", incomingMessage, currentMessage);
+            log.info("send message: address {}, sending: {} ", address, message);
         } else {
             String phrase = resp.getStatusCode().getReasonPhrase();
             int code = resp.getStatusCodeValue();
-            log.info("error {}-{} send message: incoming:{}, sending: {} ", code, phrase, incomingMessage, currentMessage);
+            log.info("error {}-{} send message: incoming:{}, sending: {} ", code, phrase, address, message);
         }
     }
 
+    public void sendMessageToOthers() {
+        String address = client.getServiceAddress();
+        String[] nodes = ZabUtils.filter(address, this.nodes);
+        lock.lock();
+        try {
+            for (String node : nodes) {
+                try {
+                    sendMessage(node, currentMessage);
+                    log.info(" send message {} to {}", currentMessage, address);
+                } catch (Exception ex) {
+                    log.info(" error to send {} to {}",currentMessage, node, ex);
+                }
+            }
 
-    @Override
-    public Boolean operate() {
-        return electionStateInit();
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public boolean electionStateInit() {
+    public boolean electionStateInit(Zid zid) {
         this.nodes = client.getNodes();
         int id = ZabUtils.find(client.getServiceAddress(), nodes);
         this.currentMessage.getBody().roundInc();
         this.currentMessage.getBody().setId(id);
         this.currentMessage.getBody().getVote().setId(id);
+        this.currentMessage.getBody().getVote().setZid(zid);
         this.currentMessage.setStatus(ELECTION);
         log.info(" initial operation: current {}, nodes {}", currentMessage, Arrays.toString(nodes));
         return true;
