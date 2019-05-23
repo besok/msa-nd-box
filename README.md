@@ -22,5 +22,5 @@
     - pull task from metric
     - complex command (orchestrator / dsl)
 - logs aggregator
-- zab
+- zab (*http://www.tcs.hut.fi/Studies/T-79.5001/reports/2012-deSouzaMedeiros.pdf*)
 
