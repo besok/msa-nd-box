@@ -1,6 +1,7 @@
 package ie.home.msa.zab;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class ZVote implements Serializable,Comparable<ZVote> {
     private int id;
@@ -53,5 +54,19 @@ public class ZVote implements Serializable,Comparable<ZVote> {
             throw new IllegalArgumentException("must be positive ");
         }
         return el;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        return this.compareTo((ZVote) o) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id;
+        result = 31 * result + (zid != null ? zid.hashCode() : 0);
+        return result;
     }
 }

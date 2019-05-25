@@ -6,6 +6,13 @@ import ie.home.msa.zab.ZNotification;
 public class ElectionMessage extends Message<ZNodeState, ZNotification> {
     @Override
     public String toString() {
-        return super.toString();
+
+        String address = getService().getAddress();
+        String status = getStatus().toString();
+        String notification = getBody().toString();
+
+        return String.join("",
+                "{", notification, ",", status, ",", address, "}"
+        );
     }
 }

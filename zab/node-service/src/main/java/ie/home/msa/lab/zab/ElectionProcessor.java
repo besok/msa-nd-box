@@ -1,9 +1,7 @@
 package ie.home.msa.lab.zab;
 
 import ie.home.msa.messages.ElectionMessage;
-import ie.home.msa.messages.Message;
 import ie.home.msa.sandbox.discovery.client.InitializationOperation;
-import ie.home.msa.zab.ZNotification;
 import ie.home.msa.zab.ZVote;
 import ie.home.msa.zab.Zid;
 import lombok.extern.slf4j.Slf4j;
@@ -12,25 +10,27 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
+import static ie.home.msa.lab.zab.ZabUtils.round;
+import static ie.home.msa.lab.zab.ZabUtils.vote;
 import static ie.home.msa.zab.ZNodeState.*;
 
 @Service
 @Slf4j
 public class ElectionProcessor implements InitializationOperation {
 
-    private static final int THRESHOLD = 4000;
-    private static int TIMEOUT = new Random().nextInt(500);
-
+    private final NodeState state;
+    private final ElectionMessageQueue queue;
     private final ElectionNotificationReceiver receiver;
     private final BroadcastProcessor broadcast;
     private final Map<Integer, ElectionMessage> outOfElectionMap;
     private final Map<Integer, ElectionMessage> receivedVoteMap;
 
-    public ElectionProcessor(ElectionNotificationReceiver receiver,
+    public ElectionProcessor(NodeState state, ElectionMessageQueue queue, ElectionNotificationReceiver receiver,
                              BroadcastProcessor broadcastProcessor) {
+        this.state = state;
+        this.queue = queue;
         this.receiver = receiver;
         this.broadcast = broadcastProcessor;
         this.receivedVoteMap = new HashMap<>();
@@ -38,62 +38,73 @@ public class ElectionProcessor implements InitializationOperation {
     }
 
     private void commonThread() {
-
-
         log.info(" election process init");
 
-        threadSleep();
         outOfElectionMap.clear();
         receivedVoteMap.clear();
 
         if (receiver.electionStateInit(broadcast.getLastZid())) {
-            receiver.sendMessageToOthers();
             log.info(" election process init");
-            while (receiver.currentMessage.getStatus() == ELECTION) {
-                Optional<ElectionMessage> mesOpt = receiver.pop();
+            while (state.getStatus() == ELECTION) {
+                Optional<ElectionMessage> mesOpt = queue.pop();
                 if (mesOpt.isPresent()) {
                     ElectionMessage mes = mesOpt.get();
-                    int currentRound = round(receiver.getState());
-                    int incomeRound = round(mes);
-                    ZVote currentVote = vote(receiver.getState());
-                    ZVote incomeVote = vote(mes);
+                    log.info(" message is present {}", mes);
+                    int crR = state.getRound();
+                    int inR = round(mes);
+                    ZVote crV = state.getVote();
+                    ZVote inV = vote(mes);
+                    log.info("precond : crR:{}, inR:{}, crV: {}, inV:{}", crR, inR, crV, inV);
                     if (mes.getStatus() == ELECTION) {
-                        if (incomeRound > currentRound) {
-                            receiver.getState().getBody().setRound(incomeRound);
+                        if (inR > crR) {
+                            state.setRound(inR);
                             receivedVoteMap.clear();
-                            if (incomeVote.compareTo(currentVote) > 0) {
-                                receiver.getState().getBody().setVote(incomeVote);
+                            if (inV.compareTo(crV) > 0) {
+                                state.setVote(inV);
+                                log.info("update vote to income {}", inV);
+                            } else {
+                                int id = state.getId();
+                                state.setVote(new ZVote(id, broadcast.getLastZid()));
+                                log.info("update vote to current {}", crV);
                             }
                             receiver.sendMessageToOthers();
-                        } else if (currentRound == incomeRound && incomeVote.compareTo(currentVote) > 0) {
-                            receiver.getState().getBody().setVote(mes.getBody().getVote());
+                        } else if (crR == inR && inV.compareTo(crV) > 0) {
+                            state.setVote(inV);
+                            log.info("update vote to income {}", inV);
                             receiver.sendMessageToOthers();
-                        } else if (incomeRound < currentRound) {
+                        } else if (inR < crR) {
                             break;
                         }
                         receivedVoteMap.put(mes.getBody().getId(), mes);
+                        log.info("after put to map : {} ", receivedVoteMap);
                         if (receiver.nodes.length == receivedVoteMap.size()) {
-                            deduceLeader(vote(receiver.currentMessage).getId());
+                            log.info("deduce after reaching ensemle size");
+                            deduceLeader(state.getVote().getId());
                             return;
                         } else if (checkQuorumThisReceivedMap()) {
-                            deduceLeader(vote(receiver.currentMessage).getId());
+                            log.info("deduce after reaching quorum size");
+                            deduceLeader(state.getVote().getId());
+                            return;
                         }
                     } else {
-                        if (currentRound == incomeRound) {
+                        if (crR == inR) {
                             receivedVoteMap.put(mes.getBody().getId(), mes);
                             if (mes.getStatus() == LEADER) {
-                                deduceLeader(mes.getBody().getId());
-                                return;
-                            } else if (id() == mes.getBody().getVote().getId() && checkQuorum(mes.getBody().getVote(), receivedVoteMap)) {
+                                log.info("deduce after get mes from leader");
                                 deduceLeader(mes.getBody().getVote().getId());
+                                return;
+                            } else if (state.getId() == mes.getBody().getVote().getId() && ZabUtils.checkQuorum(mes.getBody().getVote(), receivedVoteMap, receiver.nodes.length)) {
+                                log.info("deduce after quorum for this id");
+                                deduceLeader(state.getId());
                                 return;
                             }
                             //else if n.vote has a quorum in ReceivedVotes and the voted peer n.vote.id is in  state LEADING and n.vote.id ∈ OutOfElection then
                             // DeduceLeader(n.vote.id); return n.vote
                         }
                         outOfElectionMap.put(mes.getBody().getId(), mes);
-                        if (mes.getBody().getVote().getId() == id() && checkQuorum(mes.getBody().getVote(), outOfElectionMap)) {
-                            receiver.getState().getBody().setRound(mes.getBody().getRound());
+                        if (mes.getBody().getVote().getId() == state.getId() && ZabUtils.checkQuorum(mes.getBody().getVote(), outOfElectionMap, receiver.nodes.length)) {
+                            state.setRound(mes.getBody().getRound());
+                            log.info("deduce after quorum for this id [outofelect]");
                             deduceLeader(mes.getBody().getVote().getId());
                             return;
                         }
@@ -103,7 +114,6 @@ public class ElectionProcessor implements InitializationOperation {
                     }
                 } else {
                     receiver.sendMessageToOthers();
-                    threadSleep();
                 }
             }
 
@@ -114,13 +124,12 @@ public class ElectionProcessor implements InitializationOperation {
 
     }
 
-    private void threadSleep() {
-        TIMEOUT = ZabUtils.threadSleep(TIMEOUT, THRESHOLD);
-        log.info(" thread sleep {}",TIMEOUT);
-    }
 
     private boolean checkQuorumThisReceivedMap() {
-        return checkQuorum(receiver.getState().getBody().getVote(), receivedVoteMap);
+        int length = receiver.nodes.length;
+        ZVote vote = state.getVote();
+        log.info("check quorum for {} , {}, {}", receivedVoteMap, vote, length);
+        return ZabUtils.checkQuorum(vote, receivedVoteMap, length);
     }
 
 
@@ -135,36 +144,17 @@ public class ElectionProcessor implements InitializationOperation {
         CompletableFuture.runAsync(this::commonThread);
     }
 
-    private int round(ElectionMessage m) {
-        return m.getBody().getRound();
-    }
 
-    private ZVote vote(ElectionMessage m) {
-        return m.getBody().getVote();
-    }
 
     private void deduceLeader(int id) {
         String addr = receiver.client.getServiceAddress();
         if (ZabUtils.isLeader(id, addr, receiver.nodes)) {
-            receiver.getState().setStatus(LEADER);
+            state.setStatus(LEADER);
         } else {
-            receiver.getState().setStatus(FOLLOWER);
+            state.setStatus(FOLLOWER);
         }
-        log.info(" deduce leader {} ", receiver.getState());
+        queue.clear();
+        log.info(" deduce leader {} for id {}", state, id);
     }
 
-    private boolean checkQuorum(ZVote vote, Map<Integer, ElectionMessage> map) {
-        int length = receiver.nodes.length;
-        int qS = length % 2 == 0 ? length / 2 + 1 : length / 2;
-        long size = map.values().stream()
-                .map(Message::getBody)
-                .map(ZNotification::getVote)
-                .filter(vote::equals)
-                .count();
-        return size >= qS;
-    }
-
-    private int id() {
-        return receiver.getState().getBody().getId();
-    }
 }

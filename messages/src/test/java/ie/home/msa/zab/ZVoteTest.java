@@ -16,5 +16,11 @@ public class ZVoteTest {
 
         voteLeft.setId(2);
         Assert.assertEquals(1,voteLeft.compareTo(voteRight));
+
+        voteLeft.setId(1);
+
+        Assert.assertTrue(voteLeft.equals(voteRight));
+        Assert.assertTrue(voteRight.equals(voteLeft));
+
     }
 }

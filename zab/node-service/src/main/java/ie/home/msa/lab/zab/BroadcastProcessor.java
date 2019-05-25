@@ -10,11 +10,11 @@ public class BroadcastProcessor {
 
     private Zid lastZid;
 
-    public Zid getLastZid() {
+    Zid getLastZid() {
         return lastZid;
     }
 
-    public void setLastZid(Zid lastZid) {
+    void setLastZid(Zid lastZid) {
         this.lastZid = lastZid;
     }
 }

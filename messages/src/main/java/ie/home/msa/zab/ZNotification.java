@@ -47,7 +47,7 @@ public class ZNotification implements Serializable {
 
     @Override
     public String toString() {
-        return "ZNotification{" +
+        return "{" +
                 "vote=" + vote +
                 ", round=" + round +
                 ", id=" + id +
