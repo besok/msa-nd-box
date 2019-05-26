@@ -32,6 +32,11 @@ public class ElectionNotificationReceiver {
         this.lock = new ReentrantLock(true);
     }
 
+
+    int nodeSize(){
+        return this.nodes.length;
+    }
+
     public void processMessage(ElectionMessage message) {
         lock.lock();
         try {
@@ -40,8 +45,7 @@ public class ElectionNotificationReceiver {
             if (state.getStatus() == ELECTION) {
                 queue.push(message);
                 if (message.getStatus() == ELECTION) {
-                    int crRound = state.getRound();
-                    if (crRound > round(message)) {
+                    if (state.getRound() > round(message)) {
                         sendMessage(address, state.message());
                     }
                 }

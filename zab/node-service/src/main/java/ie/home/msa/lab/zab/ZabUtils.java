@@ -48,4 +48,10 @@ class ZabUtils {
     static ZVote vote(ElectionMessage message){
         return message.getBody().getVote();
     }
+    static int voteId(ElectionMessage message){
+        return message.getBody().getVote().getId();
+    }
+    static int id(ElectionMessage message){
+        return message.getBody().getId();
+    }
 }

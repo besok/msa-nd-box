@@ -46,6 +46,7 @@ public class NodeState {
     }
 
     public void setVote(ZVote vote) {
+        log.info(" set vote , old : {} , new : {}",this.vote,vote);
         this.vote = vote;
     }
 

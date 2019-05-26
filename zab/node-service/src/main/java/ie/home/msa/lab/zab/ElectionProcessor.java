@@ -12,8 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static ie.home.msa.lab.zab.ZabUtils.round;
-import static ie.home.msa.lab.zab.ZabUtils.vote;
+import static ie.home.msa.lab.zab.ZabUtils.*;
 import static ie.home.msa.zab.ZNodeState.*;
 
 @Service
@@ -49,7 +48,6 @@ public class ElectionProcessor implements InitializationOperation {
                 Optional<ElectionMessage> mesOpt = queue.pop();
                 if (mesOpt.isPresent()) {
                     ElectionMessage mes = mesOpt.get();
-                    log.info(" message is present {}", mes);
                     int crR = state.getRound();
                     int inR = round(mes);
                     ZVote crV = state.getVote();
@@ -61,56 +59,49 @@ public class ElectionProcessor implements InitializationOperation {
                             receivedVoteMap.clear();
                             if (inV.compareTo(crV) > 0) {
                                 state.setVote(inV);
-                                log.info("update vote to income {}", inV);
                             } else {
                                 int id = state.getId();
                                 state.setVote(new ZVote(id, broadcast.getLastZid()));
-                                log.info("update vote to current {}", crV);
                             }
                             receiver.sendMessageToOthers();
                         } else if (crR == inR && inV.compareTo(crV) > 0) {
                             state.setVote(inV);
-                            log.info("update vote to income {}", inV);
                             receiver.sendMessageToOthers();
                         } else if (inR < crR) {
-                            break;
+                            return;
                         }
                         receivedVoteMap.put(mes.getBody().getId(), mes);
                         log.info("after put to map : {} ", receivedVoteMap);
-                        if (receiver.nodes.length == receivedVoteMap.size()) {
-                            log.info("deduce after reaching ensemle size");
+                        if (receiver.nodeSize() == receivedVoteMap.size()) {
                             deduceLeader(state.getVote().getId());
                             return;
-                        } else if (checkQuorumThisReceivedMap()) {
-                            log.info("deduce after reaching quorum size");
+                        } else if (checkQuorumThisRec()) {
                             deduceLeader(state.getVote().getId());
                             return;
                         }
                     } else {
                         if (crR == inR) {
-                            receivedVoteMap.put(mes.getBody().getId(), mes);
+                            receivedVoteMap.put(id(mes), mes);
                             if (mes.getStatus() == LEADER) {
-                                log.info("deduce after get mes from leader");
-                                deduceLeader(mes.getBody().getVote().getId());
+                                deduceLeader(voteId(mes));
                                 return;
-                            } else if (state.getId() == mes.getBody().getVote().getId() && ZabUtils.checkQuorum(mes.getBody().getVote(), receivedVoteMap, receiver.nodes.length)) {
-                                log.info("deduce after quorum for this id");
+                            } else if (state.getId() == voteId(mes) && checkQuorumRec(vote(mes))) {
                                 deduceLeader(state.getId());
                                 return;
                             }
-                            //else if n.vote has a quorum in ReceivedVotes and the voted peer n.vote.id is in  state LEADING and n.vote.id ∈ OutOfElection then
-                            // DeduceLeader(n.vote.id); return n.vote
+                            else if(checkQuorumOut(vote(mes)) && outOfElectionMap.containsKey(voteId(mes))){
+                                deduceLeader(voteId(mes));
+                            }
                         }
                         outOfElectionMap.put(mes.getBody().getId(), mes);
-                        if (mes.getBody().getVote().getId() == state.getId() && ZabUtils.checkQuorum(mes.getBody().getVote(), outOfElectionMap, receiver.nodes.length)) {
-                            state.setRound(mes.getBody().getRound());
-                            log.info("deduce after quorum for this id [outofelect]");
-                            deduceLeader(mes.getBody().getVote().getId());
+                        if (voteId(mes) == state.getId() && checkQuorumOut(vote(mes))) {
+                            state.setRound(round(mes));
+                            deduceLeader(voteId(mes));
                             return;
+                        }else if(checkQuorumOut(vote(mes)) && outOfElectionMap.containsKey(voteId(mes))){
+                            state.setRound(round(mes));
+                            deduceLeader(voteId(mes));
                         }
-                        // else if n.vote has a quorum in OutOfElection and the voted peer n.vote.id is in state LEADING and n.vote.id ∈ OutOfElection then
-                        // P.round ← n.round
-                        // DeduceLeader(n.vote.id); return n.vote
                     }
                 } else {
                     receiver.sendMessageToOthers();
@@ -125,11 +116,19 @@ public class ElectionProcessor implements InitializationOperation {
     }
 
 
-    private boolean checkQuorumThisReceivedMap() {
+
+    private boolean checkQuorumThisRec() {
+        return checkQuorumRec(state.getVote());
+    }
+    private boolean checkQuorumRec(ZVote vote) {
         int length = receiver.nodes.length;
-        ZVote vote = state.getVote();
         log.info("check quorum for {} , {}, {}", receivedVoteMap, vote, length);
         return ZabUtils.checkQuorum(vote, receivedVoteMap, length);
+    }
+    private boolean checkQuorumOut(ZVote vote) {
+        int length = receiver.nodes.length;
+        log.info("check quorum for {} , {}, {}", outOfElectionMap, vote, length);
+        return ZabUtils.checkQuorum(vote, outOfElectionMap, length);
     }
 
 
