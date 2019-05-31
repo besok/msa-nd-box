@@ -30,7 +30,7 @@ class ZabUtils {
     }
 
     static boolean checkQuorum(ZVote vote, Map<Integer, ElectionMessage> map, int sizeEnsemble) {
-        int qS = sizeEnsemble % 2 == 0 ? sizeEnsemble / 2 + 1 : sizeEnsemble / 2;
+        int qS = quorumSize(sizeEnsemble);
         long size = map.values().stream()
                 .map(Message::getBody)
                 .map(ZNotification::getVote)
@@ -38,6 +38,11 @@ class ZabUtils {
                 .count();
         return size >= qS;
     }
+
+    static int quorumSize(int sizeEnsemble){
+        return sizeEnsemble % 2 == 0 ? sizeEnsemble / 2 + 1 : sizeEnsemble / 2;
+    }
+
     static int setTimeout(int current, int threshold) {
         return Math.min(current * 2, threshold);
     }

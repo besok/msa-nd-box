@@ -149,8 +149,10 @@ public class ElectionProcessor implements InitializationOperation {
         String addr = receiver.client.getServiceAddress();
         if (ZabUtils.isLeader(id, addr, receiver.nodes)) {
             state.setStatus(LEADER);
+            broadcast.setLeaderItself(addr);
         } else {
             state.setStatus(FOLLOWER);
+            broadcast.setLeaderOther(receiver.nodes[id] );
         }
         queue.clear();
         log.info(" deduce leader {} for id {}", state, id);
