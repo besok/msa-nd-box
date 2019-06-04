@@ -32,7 +32,7 @@ public class NodeController {
     }
 
     @PostMapping(path = "/write")
-    public void broadcastMessage(@RequestBody Object object) {
+    public void broadcastMessage(@RequestBody String object) {
         CompletableFuture.runAsync(() -> broadcastProcessor.processObject(object));
     }
 

@@ -1,5 +1,6 @@
 package ie.home.msa.lab.zab;
 
+import ie.home.msa.messages.Message;
 import ie.home.msa.messages.ZWriteMessage;
 import ie.home.msa.messages.ZWriteMessageBuilder;
 import ie.home.msa.sandbox.discovery.client.DiscoveryClient;
@@ -7,12 +8,17 @@ import ie.home.msa.zab.WriteMessage;
 import ie.home.msa.zab.WriteStatus;
 import ie.home.msa.zab.Zid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static ie.home.msa.zab.WriteStatus.*;
 
 @Slf4j
 @Service
@@ -22,14 +28,16 @@ public class BroadcastProcessor {
     private final Lock lock;
     private final DiscoveryClient client;
 
-    private Queue<QValue> messageQueue;
-    private Set<WriteMessage> writeMessageSet;
+    private Set<QValue> messageQueue;
+    private Set<WriteMessage> incomeMesSet;
+    private Set<WriteMessage> mesSet;
 
     public BroadcastProcessor(DiscoveryClient client) {
         this.client = client;
         this.lock = new ReentrantLock(true);
-        this.messageQueue = new ArrayDeque<>();
-        this.writeMessageSet = new HashSet<>();
+        this.messageQueue = new HashSet<>();
+        this.incomeMesSet = new HashSet<>();
+        this.mesSet = new HashSet<>();
     }
 
     Zid getLastZid() {
@@ -48,7 +56,7 @@ public class BroadcastProcessor {
         leaderInfo = new LeaderInfo(true, leaderAddress);
     }
 
-    public void processObject(Object obj) {
+    public void processObject(String obj) {
         lock.lock();
         try {
             if (Objects.isNull(leaderInfo)) {
@@ -68,26 +76,36 @@ public class BroadcastProcessor {
     public void commitMessage(ZWriteMessage message) {
         lock.lock();
         try {
+            log.info(" come message {}", message);
             WriteStatus status = message.getStatus();
+            WriteMessage m = message.getBody();
             switch (status) {
                 case INCOME:
-                    writeMessageSet.add(message.getBody());
-                    ZWriteMessage mesToSend = ZWriteMessageBuilder.createMessage(
-                            client.getServiceAddress(),
-                            WriteStatus.ACK,
-                            message.getBody().getZid(),
-                            message.getBody().getData());
+                    incomeMesSet.add(m);
+                    String address = client.getServiceAddress();
+                    ZWriteMessage mesToSend = buildMessage(address, ACK, m);
                     ResponseEntity<Void> resp = client.getRestTemplate().postForEntity(
-                            "http://" + leaderInfo.leaderAddress + "/message", mesToSend, Void.class
+                            "http://" + leaderInfo.address + "/message", mesToSend, Void.class
                     );
                     if (resp.getStatusCode().isError()) {
-                        log.error("something goes wrong : {}", resp.getStatusCodeValue());
+                        log.error("something goes wrong to send ack mes: {}", resp.getStatusCodeValue());
+                    } else {
+                        log.info("send ack message to leader {}", mesToSend);
                     }
-                    log.info(" come message {}, put to queue , send with dif status", message, mesToSend);
                     break;
                 case ACK:
-
+                    if (checkQuorum(message)) {
+                        ZWriteMessage commitMessage = buildMessage(leaderInfo.address, COMMIT,m);
+                        sendMessageToNodes(filterByLeader(),commitMessage);
+                    }
+                    break;
                 case COMMIT:
+                    boolean mes = removeMessageIf(m);
+                    log.info("got commit message: if this node contains then fix it: {}", mes);
+                    if (mes) {
+                        mesSet.add(m);
+                    }
+                    break;
             }
         } catch (Exception ex) {
             log.error("processing message {} is failed", message, ex);
@@ -96,55 +114,93 @@ public class BroadcastProcessor {
         }
     }
 
-    private void processMessageAsLeader(Object obj) {
-        String[] nodes = ZabUtils.filter(leaderInfo.leaderAddress, client.getNodes());
+    private ZWriteMessage buildMessage(String address, WriteStatus status, WriteMessage message) {
+        return ZWriteMessageBuilder.createMessage(
+                address,
+                status,
+                message.getZid(),
+                message.getData()
+        );
+    }
+
+    private boolean removeMessageIf(WriteMessage message) {
+        return incomeMesSet.removeIf(e -> e.equals(message));
+
+    }
+
+
+    private void processMessageAsLeader(String obj) {
+        String[] nodes = filterByLeader();
         lastZid.incCounter();
-        ZWriteMessage message = ZWriteMessageBuilder.createMessage(leaderInfo.leaderAddress, WriteStatus.INCOME, lastZid, obj);
+        ZWriteMessage message =  ZWriteMessageBuilder.createMessage(
+                leaderInfo.address,
+                INCOME,
+                lastZid,
+                obj
+        );
         lock.lock();
         try {
             messageQueue.add(new QValue(message, ZabUtils.quorumSize(nodes.length)));
-            for (String node : nodes) {
-                try {
-                    ResponseEntity<Void> resp = client.getRestTemplate()
-                            .postForEntity("http://" + node + "/message", message, Void.class);
-                    if (resp.getStatusCode().isError()) {
-                        log.error("something goes wrong : {}", resp.getStatusCodeValue());
-                    }
-                } catch (Exception ex) {
-                    log.error("sending message is failed", ex);
-                }
-            }
+            sendMessageToNodes(nodes, message);
         } finally {
             lock.unlock();
         }
     }
 
+    private void sendMessageToNodes(String[] nodes, ZWriteMessage message) {
+        for (String node : nodes) {
+            try {
+                ResponseEntity<Void> resp = client.getRestTemplate()
+                        .postForEntity("http://" + node + "/message", message, Void.class);
+                if (resp.getStatusCode().isError()) {
+                    log.error("something goes wrong : {}", resp.getStatusCodeValue());
+                }
+            } catch (Exception ex) {
+                log.error("sending message is failed", ex);
+            }
+        }
+    }
+
+    private String[] filterByLeader() {
+        return ZabUtils.filter(leaderInfo.address, client.getNodes());
+    }
+
     private void sendToLeader(Object message) {
         log.info("got write message {}, send it to leader", message);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<Void> resp = client.getRestTemplate()
-                .postForEntity("http://" + leaderInfo.leaderAddress + "/write", message, Void.class);
+                .postForEntity("http://" + leaderInfo.address + "/write", new HttpEntity<>(message,headers), Void.class);
         if (resp.getStatusCode().isError()) {
             log.error("something goes wrong : {}", resp.getStatusCodeValue());
         }
     }
 
+    private boolean checkQuorum(ZWriteMessage mes) {
+        String address = mes.getService().getAddress();
+        return messageQueue.stream()
+                .filter(v -> v.m.equals(mes))
+                .map(v -> v.check(address))
+                .findAny()
+                .orElse(false);
+    }
 
-    private class LeaderInfo {
+    private static class LeaderInfo {
         private boolean isLeader;
-        private String leaderAddress;
+        private String address;
 
-        public LeaderInfo(boolean isLeader, String leaderAddress) {
+        LeaderInfo(boolean isLeader, String address) {
             this.isLeader = isLeader;
-            this.leaderAddress = leaderAddress;
+            this.address = address;
         }
     }
 
-    private class QValue {
+    private static class QValue {
         private ZWriteMessage m;
         private Set<String> counter;
         private int qs;
 
-        public QValue(ZWriteMessage m, int qs) {
+        QValue(ZWriteMessage m, int qs) {
             this.counter = new HashSet<>();
             this.m = m;
             this.qs = qs;
@@ -152,8 +208,11 @@ public class BroadcastProcessor {
 
 
         boolean check(String address) {
+            int prevSize = counter.size();
             counter.add(address);
-            return counter.size() >= qs;
+            int newSize = counter.size();
+            log.info("put address:{}, prev:{}, new:{}", address, prevSize, newSize);
+            return newSize >= qs;
         }
     }
 }
