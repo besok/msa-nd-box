@@ -63,8 +63,10 @@ public class BroadcastProcessor {
                 log.info("got object {}, but it is not broadcast phase ", obj);
             } else {
                 if (leaderInfo.isLeader) {
+                    log.info(" get object, process as leader");
                     processMessageAsLeader(obj);
                 } else {
+                    log.info(" get object, send to leader");
                     sendToLeader(obj);
                 }
             }
@@ -95,8 +97,11 @@ public class BroadcastProcessor {
                     break;
                 case ACK:
                     if (checkQuorum(message)) {
-                        ZWriteMessage commitMessage = buildMessage(leaderInfo.address, COMMIT,m);
-                        sendMessageToNodes(filterByLeader(),commitMessage);
+                        log.info("quorum ... send commit ");
+                        ZWriteMessage commitMessage = buildMessage(leaderInfo.address, COMMIT, m);
+                        sendMessageToNodes(filterByLeader(), commitMessage);
+                        mesSet.add(m);
+                        messageQueue.removeIf(v -> v.m.getBody().equals(message.getBody()));
                     }
                     break;
                 case COMMIT:
@@ -132,7 +137,7 @@ public class BroadcastProcessor {
     private void processMessageAsLeader(String obj) {
         String[] nodes = filterByLeader();
         lastZid.incCounter();
-        ZWriteMessage message =  ZWriteMessageBuilder.createMessage(
+        ZWriteMessage message = ZWriteMessageBuilder.createMessage(
                 leaderInfo.address,
                 INCOME,
                 lastZid,
@@ -154,6 +159,8 @@ public class BroadcastProcessor {
                         .postForEntity("http://" + node + "/message", message, Void.class);
                 if (resp.getStatusCode().isError()) {
                     log.error("something goes wrong : {}", resp.getStatusCodeValue());
+                } else {
+                    log.info("send to node {}, message {}", node, message);
                 }
             } catch (Exception ex) {
                 log.error("sending message is failed", ex);
@@ -170,7 +177,7 @@ public class BroadcastProcessor {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<Void> resp = client.getRestTemplate()
-                .postForEntity("http://" + leaderInfo.address + "/write", new HttpEntity<>(message,headers), Void.class);
+                .postForEntity("http://" + leaderInfo.address + "/write", new HttpEntity<>(message, headers), Void.class);
         if (resp.getStatusCode().isError()) {
             log.error("something goes wrong : {}", resp.getStatusCodeValue());
         }
@@ -179,7 +186,7 @@ public class BroadcastProcessor {
     private boolean checkQuorum(ZWriteMessage mes) {
         String address = mes.getService().getAddress();
         return messageQueue.stream()
-                .filter(v -> v.m.equals(mes))
+                .filter(v -> v.m.getBody().equals(mes.getBody()))
                 .map(v -> v.check(address))
                 .findAny()
                 .orElse(false);
@@ -203,7 +210,7 @@ public class BroadcastProcessor {
         QValue(ZWriteMessage m, int qs) {
             this.counter = new HashSet<>();
             this.m = m;
-            this.qs = qs;
+            this.qs = qs-1;
         }
 
 
