@@ -250,14 +250,15 @@ public class BroadcastProcessor {
                     mesSet.addAll(message.getBody().getMessageList());
                     setLastZid(incomeZid);
                     recoveryMessage.setStatus(RecoveryStatus.ACKNEWLEADER);
-                    sendMessageToNode(recoveryMessage, recoveryMessage.getService().getAddress(), "recovery");
+                    sendMessageToNode(recoveryMessage, leaderInfo.address, "recovery");
                     leaderInfo.disableRecovery();
 
                     break;
                 case TRUNC:
                     log.info("remove all mes > then {}", incomeZid);
                     mesSet.removeIf(m -> incomeZid.compareTo(m.getZid()) < 0);
-                    sendMessageToNode(recoveryMessage, recoveryMessage.getService().getAddress(), "recovery");
+                    recoveryMessage.setStatus(RecoveryStatus.ACKNEWLEADER);
+                    sendMessageToNode(recoveryMessage,leaderInfo.address, "recovery");
                     leaderInfo.disableRecovery();
                     break;
             }
