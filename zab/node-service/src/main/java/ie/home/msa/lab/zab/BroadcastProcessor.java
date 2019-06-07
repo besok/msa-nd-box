@@ -75,8 +75,10 @@ public class BroadcastProcessor {
                 log.info("got object {}, but it is not broadcast phase ", obj);
             } else {
                 if (leaderInfo.isLeader) {
+                    log.info(" get object, process as leader");
                     processMessageAsLeader(obj);
                 } else {
+                    log.info(" get object, send to leader");
                     sendToLeader(obj);
                 }
             }
@@ -110,6 +112,9 @@ public class BroadcastProcessor {
                         ZWriteMessage commitMessage = buildMessage(leaderInfo.address, COMMIT, m);
                         sendMessageToNodes(filterByLeader(), commitMessage);
                         setLastZid(commitMessage.getBody().getZid());
+                        log.info("quorum ... send commit ");
+                        mesSet.add(m);
+                        messageQueue.removeIf(v -> v.m.getBody().equals(message.getBody()));
                     }
                     break;
                 case COMMIT:
@@ -154,7 +159,7 @@ public class BroadcastProcessor {
         );
         lock.lock();
         try {
-            messageQueue.add(new QValue(message, ZabUtils.quorumSize(nodes.length)-1));
+            messageQueue.add(new QValue(message, ZabUtils.quorumSize(nodes.length)));
             sendMessageToNodes(nodes, message);
         } finally {
             lock.unlock();
@@ -198,7 +203,7 @@ public class BroadcastProcessor {
     private boolean checkQuorum(ZWriteMessage mes) {
         String address = mes.getService().getAddress();
         return messageQueue.stream()
-                .filter(v -> v.m.equals(mes))
+                .filter(v -> v.m.getBody().equals(mes.getBody()))
                 .map(v -> v.check(address))
                 .findAny()
                 .orElse(false);
@@ -286,7 +291,7 @@ public class BroadcastProcessor {
         QValue(ZWriteMessage m, int qs) {
             this.counter = new HashSet<>();
             this.m = m;
-            this.qs = qs;
+            this.qs = qs-1;
         }
 
 
