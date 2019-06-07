@@ -1,14 +1,11 @@
 package ie.home.msa.lab.zab;
 
-import ie.home.msa.messages.ElectionMessage;
+import ie.home.msa.messages.ZElectionMessage;
 import ie.home.msa.zab.ZNodeState;
 import ie.home.msa.zab.ZNotification;
 import ie.home.msa.zab.ZVote;
-import ie.home.msa.zab.Zid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
 
 @Service
 @Slf4j
@@ -67,8 +64,8 @@ public class NodeState {
     }
 
 
-    public ElectionMessage message(){
-        ElectionMessage message = new ElectionMessage();
+    public ZElectionMessage message(){
+        ZElectionMessage message = new ZElectionMessage();
         message.setService(ie.home.msa.messages.Service.of("zab-node-service",address));
         message.setStatus(status);
         message.setVersion(1);

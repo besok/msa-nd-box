@@ -1,6 +1,6 @@
 package ie.home.msa.lab.zab;
 
-import ie.home.msa.messages.ElectionMessage;
+import ie.home.msa.messages.ZElectionMessage;
 import ie.home.msa.sandbox.discovery.client.DiscoveryClient;
 import ie.home.msa.zab.ZVote;
 import ie.home.msa.zab.Zid;
@@ -37,7 +37,7 @@ public class ElectionNotificationReceiver {
         return this.nodes.length;
     }
 
-    public void processMessage(ElectionMessage message) {
+    public void processMessage(ZElectionMessage message) {
         lock.lock();
         try {
             log.info(" income  {} , current {}", message, state);
@@ -57,7 +57,7 @@ public class ElectionNotificationReceiver {
         }
     }
 
-    public void sendMessage(String address, ElectionMessage message) {
+    public void sendMessage(String address, ZElectionMessage message) {
         ResponseEntity<Void> resp = client.getRestTemplate().postForEntity("http://" + address + "/election",
                 message, Void.class);
         if (resp.getStatusCode().is2xxSuccessful()) {
@@ -75,7 +75,7 @@ public class ElectionNotificationReceiver {
         lock.lock();
         try {
             for (String node : filteredNodes) {
-                ElectionMessage message = state.message();
+                ZElectionMessage message = state.message();
                 try {
                     sendMessage(node, message);
                 } catch (Exception ex) {

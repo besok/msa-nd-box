@@ -1,6 +1,6 @@
 package ie.home.msa.lab.zab;
 
-import ie.home.msa.messages.ElectionMessage;
+import ie.home.msa.messages.ZElectionMessage;
 import ie.home.msa.zab.ZNotification;
 import ie.home.msa.zab.ZVote;
 import ie.home.msa.zab.Zid;
@@ -29,8 +29,8 @@ public class ZabUtilsTest {
 
     @Test
     public void checkQuorum() {
-        ElectionMessage electionMessage = new ElectionMessage();
-        Map<Integer, ElectionMessage> map = new HashMap<>();
+        ZElectionMessage electionMessage = new ZElectionMessage();
+        Map<Integer, ZElectionMessage> map = new HashMap<>();
         ZVote zVote = new ZVote(1,new Zid(1,1));
         electionMessage.setBody(new ZNotification(zVote,1,1));
         map.put(1,electionMessage);
