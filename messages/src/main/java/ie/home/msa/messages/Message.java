@@ -60,4 +60,24 @@ public abstract class Message<E extends Enum<E>,T extends Serializable> implemen
                 ", service=" + service +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Message<?, ?> message = (Message<?, ?>) o;
+
+        if (!body.equals(message.body)) return false;
+        if (!status.equals(message.status)) return false;
+        return service.equals(message.service);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = body.hashCode();
+        result = 31 * result + status.hashCode();
+        result = 31 * result + service.hashCode();
+        return result;
+    }
 }
