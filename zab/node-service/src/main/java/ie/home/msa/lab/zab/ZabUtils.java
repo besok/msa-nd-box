@@ -1,6 +1,6 @@
 package ie.home.msa.lab.zab;
 
-import ie.home.msa.messages.ElectionMessage;
+import ie.home.msa.messages.ZElectionMessage;
 import ie.home.msa.messages.Message;
 import ie.home.msa.zab.ZNotification;
 import ie.home.msa.zab.ZVote;
@@ -29,7 +29,7 @@ class ZabUtils {
         return incomeId < addresses.length && addresses[incomeId].equals(address);
     }
 
-    static boolean checkQuorum(ZVote vote, Map<Integer, ElectionMessage> map, int sizeEnsemble) {
+    static boolean checkQuorum(ZVote vote, Map<Integer, ZElectionMessage> map, int sizeEnsemble) {
         int qS = quorumSize(sizeEnsemble);
         long size = map.values().stream()
                 .map(Message::getBody)
@@ -47,16 +47,16 @@ class ZabUtils {
         return Math.min(current * 2, threshold);
     }
 
-    static int round(ElectionMessage message){
+    static int round(ZElectionMessage message){
         return message.getBody().getRound();
     }
-    static ZVote vote(ElectionMessage message){
+    static ZVote vote(ZElectionMessage message){
         return message.getBody().getVote();
     }
-    static int voteId(ElectionMessage message){
+    static int voteId(ZElectionMessage message){
         return message.getBody().getVote().getId();
     }
-    static int id(ElectionMessage message){
+    static int id(ZElectionMessage message){
         return message.getBody().getId();
     }
 }

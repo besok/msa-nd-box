@@ -1,6 +1,6 @@
 package ie.home.msa.lab.zab;
 
-import ie.home.msa.messages.ElectionMessage;
+import ie.home.msa.messages.ZElectionMessage;
 import ie.home.msa.sandbox.discovery.client.InitializationOperation;
 import ie.home.msa.zab.ZVote;
 import ie.home.msa.zab.Zid;
@@ -23,8 +23,8 @@ public class ElectionProcessor implements InitializationOperation {
     private final ElectionMessageQueue queue;
     private final ElectionNotificationReceiver receiver;
     private final BroadcastProcessor broadcast;
-    private final Map<Integer, ElectionMessage> outOfElectionMap;
-    private final Map<Integer, ElectionMessage> receivedVoteMap;
+    private final Map<Integer, ZElectionMessage> outOfElectionMap;
+    private final Map<Integer, ZElectionMessage> receivedVoteMap;
 
     public ElectionProcessor(NodeState state, ElectionMessageQueue queue, ElectionNotificationReceiver receiver,
                              BroadcastProcessor broadcastProcessor) {
@@ -45,9 +45,9 @@ public class ElectionProcessor implements InitializationOperation {
         if (receiver.electionStateInit(broadcast.getLastZid())) {
             log.info(" election process init");
             while (state.getStatus() == ELECTION) {
-                Optional<ElectionMessage> mesOpt = queue.pop();
+                Optional<ZElectionMessage> mesOpt = queue.pop();
                 if (mesOpt.isPresent()) {
-                    ElectionMessage mes = mesOpt.get();
+                    ZElectionMessage mes = mesOpt.get();
                     int crR = state.getRound();
                     int inR = round(mes);
                     ZVote crV = state.getVote();

@@ -1,6 +1,7 @@
 package ie.home.msa.lab.zab;
 
-import ie.home.msa.messages.ElectionMessage;
+import ie.home.msa.messages.ZElectionMessage;
+import ie.home.msa.messages.ZRecoveryMessage;
 import ie.home.msa.messages.ZWriteMessage;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,7 +23,7 @@ public class NodeController {
 
 
     @PostMapping(path = "/election")
-    public void processMessage(@RequestBody ElectionMessage message) {
+    public void processMessage(@RequestBody ZElectionMessage message) {
         CompletableFuture.runAsync(() -> processor.processMessage(message));
     }
 
@@ -34,6 +35,11 @@ public class NodeController {
     @PostMapping(path = "/write")
     public void broadcastMessage(@RequestBody String object) {
         CompletableFuture.runAsync(() -> broadcastProcessor.processObject(object));
+    }
+
+    @PostMapping(path = "/recovery")
+    public void broadcastMessage(@RequestBody ZRecoveryMessage message) {
+        CompletableFuture.runAsync(() -> broadcastProcessor.processRecovery(message));
     }
 
 }

@@ -1,9 +1,8 @@
 package ie.home.msa.lab.zab;
 
-import ie.home.msa.messages.Message;
-import ie.home.msa.messages.ZWriteMessage;
-import ie.home.msa.messages.ZWriteMessageBuilder;
+import ie.home.msa.messages.*;
 import ie.home.msa.sandbox.discovery.client.DiscoveryClient;
+import ie.home.msa.zab.RecoveryStatus;
 import ie.home.msa.zab.WriteMessage;
 import ie.home.msa.zab.WriteStatus;
 import ie.home.msa.zab.Zid;
@@ -32,12 +31,15 @@ public class BroadcastProcessor {
     private Set<WriteMessage> incomeMesSet;
     private Set<WriteMessage> mesSet;
 
+    private Set<String> ascNewLeaderSet;
+
     public BroadcastProcessor(DiscoveryClient client) {
         this.client = client;
         this.lock = new ReentrantLock(true);
         this.messageQueue = new HashSet<>();
         this.incomeMesSet = new HashSet<>();
         this.mesSet = new HashSet<>();
+        this.ascNewLeaderSet = new HashSet<>();
     }
 
     Zid getLastZid() {
@@ -50,11 +52,21 @@ public class BroadcastProcessor {
 
     public void setLeaderOther(String leaderAddress) {
         leaderInfo = new LeaderInfo(false, leaderAddress);
+        ZRecoveryMessage m = ZRecoveryMessageBuilder.createMessage(
+                client.getServiceName(),
+                client.getServiceAddress(),
+                RecoveryStatus.FOLLOWERINFO,
+                getLastZid(),
+                new ArrayList<>()
+        );
+        sendMessageToNode(m,leaderAddress,"recovery");
     }
 
     public void setLeaderItself(String leaderAddress) {
+        lastZid.incEpoch();
         leaderInfo = new LeaderInfo(true, leaderAddress);
     }
+
 
     public void processObject(String obj) {
         lock.lock();
@@ -97,9 +109,10 @@ public class BroadcastProcessor {
                     break;
                 case ACK:
                     if (checkQuorum(message)) {
-                        log.info("quorum ... send commit ");
                         ZWriteMessage commitMessage = buildMessage(leaderInfo.address, COMMIT, m);
                         sendMessageToNodes(filterByLeader(), commitMessage);
+                        setLastZid(commitMessage.getBody().getZid());
+                        log.info("quorum ... send commit ");
                         mesSet.add(m);
                         messageQueue.removeIf(v -> v.m.getBody().equals(message.getBody()));
                     }
@@ -109,6 +122,7 @@ public class BroadcastProcessor {
                     log.info("got commit message: if this node contains then fix it: {}", mes);
                     if (mes) {
                         mesSet.add(m);
+                        setLastZid(m.getZid());
                     }
                     break;
             }
@@ -152,19 +166,22 @@ public class BroadcastProcessor {
         }
     }
 
+
     private void sendMessageToNodes(String[] nodes, ZWriteMessage message) {
         for (String node : nodes) {
-            try {
-                ResponseEntity<Void> resp = client.getRestTemplate()
-                        .postForEntity("http://" + node + "/message", message, Void.class);
-                if (resp.getStatusCode().isError()) {
-                    log.error("something goes wrong : {}", resp.getStatusCodeValue());
-                } else {
-                    log.info("send to node {}, message {}", node, message);
-                }
-            } catch (Exception ex) {
-                log.error("sending message is failed", ex);
+            sendMessageToNode(message, node, "message");
+        }
+    }
+
+    private <T extends Message<?, ?>> void sendMessageToNode(T message, String address, String api) {
+        try {
+            ResponseEntity<Void> resp = client.getRestTemplate()
+                    .postForEntity("http://" + address + "/" + api, message, Void.class);
+            if (resp.getStatusCode().isError()) {
+                log.error("something goes wrong : {}", resp.getStatusCodeValue());
             }
+        } catch (Exception ex) {
+            log.error("sending message is failed", ex);
         }
     }
 
@@ -192,13 +209,78 @@ public class BroadcastProcessor {
                 .orElse(false);
     }
 
+    public void processRecovery(ZRecoveryMessage message) {
+        lock.lock();
+        try {
+            log.info("got recovery message {}", message);
+            RecoveryStatus status = message.getStatus();
+            String[] nodes = client.getNodes();
+            String sname = client.getServiceName();
+            String sAdrr = client.getServiceAddress();
+            Zid leaderZid = getLastZid();
+            Zid incomeZid = message.getBody().getZid();
+            ZRecoveryMessage recoveryMessage =
+                    ZRecoveryMessageBuilder.createMessage(sname, sAdrr, status, leaderZid, new ArrayList<>());
+            switch (status) {
+                case FOLLOWERINFO:
+                    recoveryMessage.setStatus(RecoveryStatus.SENDNEWLEADER);
+                    sendMessageToNode(recoveryMessage, message.getService().getAddress(), "recovery");
+                    if (leaderZid.compareTo(incomeZid) > 0) {
+                        recoveryMessage.setStatus(RecoveryStatus.DIFF);
+                        recoveryMessage.getBody().setMessageList(new ArrayList<>(mesSet));
+                    } else {
+                        recoveryMessage.setStatus(RecoveryStatus.TRUNC);
+                    }
+                    sendMessageToNode(recoveryMessage, message.getService().getAddress(), "recovery");
+                    break;
+                case ACKNEWLEADER:
+                    ascNewLeaderSet.add(message.getService().getAddress());
+                    int qs = ZabUtils.quorumSize(nodes.length);
+                    if (qs <= ascNewLeaderSet.size()) {
+                        leaderInfo.disableRecovery();
+                    }
+                    break;
+                case SENDNEWLEADER:
+                    if (incomeZid.getEpoch() < getLastZid().getEpoch()) {
+                        // go to election
+                    }
+                case DIFF:
+                case SNAP:
+                    log.info("add all mes {}", incomeZid);
+                    mesSet.addAll(message.getBody().getMessageList());
+                    setLastZid(incomeZid);
+                    recoveryMessage.setStatus(RecoveryStatus.ACKNEWLEADER);
+                    sendMessageToNode(recoveryMessage, leaderInfo.address, "recovery");
+                    leaderInfo.disableRecovery();
+
+                    break;
+                case TRUNC:
+                    log.info("remove all mes > then {}", incomeZid);
+                    mesSet.removeIf(m -> incomeZid.compareTo(m.getZid()) < 0);
+                    recoveryMessage.setStatus(RecoveryStatus.ACKNEWLEADER);
+                    sendMessageToNode(recoveryMessage,leaderInfo.address, "recovery");
+                    leaderInfo.disableRecovery();
+                    break;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private static class LeaderInfo {
         private boolean isLeader;
         private String address;
+        private boolean recoveryMode;
 
         LeaderInfo(boolean isLeader, String address) {
             this.isLeader = isLeader;
             this.address = address;
+            this.recoveryMode = true;
+        }
+
+        public void disableRecovery() {
+            recoveryMode = false;
+            log.info(" next stage is broadcast ");
         }
     }
 
