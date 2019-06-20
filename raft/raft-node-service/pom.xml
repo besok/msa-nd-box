@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>node-service</artifactId>
+    <artifactId>raft-node-service</artifactId>
     <dependencies>
         <dependency>
             <groupId>ie.home.sandbox</groupId>
