@@ -12,7 +12,7 @@
     <artifactId>raft</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>node-service</module>
+        <module>raft-node-service</module>
     </modules>
 
 
