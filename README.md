@@ -23,4 +23,5 @@
     - complex command (orchestrator / dsl)
 - logs aggregator
 - zab (*http://www.tcs.hut.fi/Studies/T-79.5001/reports/2012-deSouzaMedeiros.pdf*)
+- raft(*https://raft.github.io/raft.pdf*)
 
