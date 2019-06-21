@@ -9,7 +9,7 @@ every service while starting to send a registration request to admin service. Al
 It can be useful if there is more than one instance and it passes through a load balanced strategy
 Then whoever wanting to interact with the microservice should ask admin-service to give the address
 - [DiscoveryClient#registration](src/main/java/ie/home/msa/sandbox/discovery/client/DiscoveryClient.java)
-- common approach on admin side it is to process all config properties through [Service registrator](discovery/src/main/java/ie/home/msa/sandbox/discovery/server/ServiceRegistrator.java)
+- common approach on admin side it is to process all config properties through [Service registrator](src/main/java/ie/home/msa/sandbox/discovery/server/ServiceRegistrator.java)
   - and more precisely is [ServiceRegistrationHandler](src/main/java/ie/home/msa/sandbox/discovery/server/ServiceRegistrationHandler.java) 
   
 #### persistence-storage
