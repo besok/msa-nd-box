@@ -7,7 +7,6 @@ public abstract class Message<E extends Enum<E>,T extends Serializable> implemen
     private String dsc;
     private T body;
     private E status;
-
     private Service service;
 
     public Service getService() {

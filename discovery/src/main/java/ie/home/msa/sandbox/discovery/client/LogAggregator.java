@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -82,14 +83,16 @@ public class LogAggregator {
     }
 
     public List<String> lookAt() throws IOException {
-        List<Path> files = Files.list(logDir).filter(this::isNotCurrentLogFile).collect(Collectors.toList());
-        ArrayList<String> logs = new ArrayList<>();
-        for (Path file : files) {
-            logs.addAll(Files.readAllLines(file));
-            log.info("log-file {} has been processed and will be removed ",file.getFileName().toString());
-            Files.deleteIfExists(file);
+        try(Stream<Path> list = Files.list(logDir)) {
+            List<Path> files = list.filter(this::isNotCurrentLogFile).collect(Collectors.toList());
+            ArrayList<String> logs = new ArrayList<>();
+            for (Path file : files) {
+                logs.addAll(Files.readAllLines(file));
+                log.info("log-file {} has been processed and will be removed ", file.getFileName().toString());
+                Files.deleteIfExists(file);
+            }
+            return logs;
         }
-        return logs;
     }
 
     private boolean isNotCurrentLogFile(Path p) {

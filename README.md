@@ -1,27 +1,31 @@
-#### Simple implementation msa patterns based on spring boot and http(simple async)
-- health + metrics 
+#### Tiny implementation patterns for microservice architecture
+
+- [health + metrics](\discovery\README.md#health-metrics)
     - close operations
     - init operations
-    - restart operations
-- messaging
+- [circuit breaker](discovery\README.md#circuit-breaker)    
+- [messaging](\messages\README.md)
     - message hierarchy
-- service discovery
-- storage listeners
-- load balancer
-- active-active + crdt
+- [service discovery](\discovery\README.md#service-discovery)
+   - service registry
+- [persistent storage](\discovery\README.md#persistence-storage)
+  - storage listeners
+- [load balancer](\discovery\README.md#load-balancer)
+- [crdt for active active](\crdt-service\README.md)
     - pncounter
         - event based
         - state based
     - lwwregister
-- saga
+- [saga](\saga-services\README.md)
     - event based
     - orchestrator based
-- batch processing
+- [batch processing](\batch-processing\README.md) 
     - workers/resource pool
     - resource manager
     - pull task from metric
     - complex command (orchestrator / dsl)
-- logs aggregator
-- zab (*http://www.tcs.hut.fi/Studies/T-79.5001/reports/2012-deSouzaMedeiros.pdf*)
-- raft(*https://raft.github.io/raft.pdf*)
+- [logs aggregator](\log-aggregator-service\README.md)
+- consensus protocols
+    - [Zookeeper Atomic Broadcast](\zab\README.md)
+    - raft(*https://raft.github.io/raft.pdf*) ... 
 
