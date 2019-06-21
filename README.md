@@ -1,31 +1,31 @@
 #### Tiny implementation patterns for microservice architecture
 
-- [health + metrics](\discovery\README.md#health-metrics)
+- [health + metrics](discovery/README.md#health-metrics)
     - close operations
     - init operations
-- [circuit breaker](discovery\README.md#circuit-breaker)    
-- [messaging](\messages\README.md)
+- [circuit breaker](discovery/README.md#circuit-breaker)    
+- [messaging](messages/README.md)
     - message hierarchy
-- [service discovery](\discovery\README.md#service-discovery)
+- [service discovery](discovery/README.md#service-discovery)
    - service registry
-- [persistent storage](\discovery\README.md#persistence-storage)
+- [persistent storage](discovery/README.md#persistence-storage)
   - storage listeners
-- [load balancer](\discovery\README.md#load-balancer)
-- [crdt for active active](\crdt-service\README.md)
+- [load balancer](discovery/README.md#load-balancer)
+- [crdt for active active](crdt-service/README.md)
     - pncounter
         - event based
         - state based
     - lwwregister
-- [saga](\saga-services\README.md)
+- [saga](saga-services/README.md)
     - event based
     - orchestrator based
-- [batch processing](\batch-processing\README.md) 
+- [batch processing](batch-processing/README.md) 
     - workers/resource pool
     - resource manager
     - pull task from metric
     - complex command (orchestrator / dsl)
-- [logs aggregator](\log-aggregator-service\README.md)
+- [logs aggregator](log-aggregator-service/README.md)
 - consensus protocols
-    - [Zookeeper Atomic Broadcast](\zab\README.md)
+    - [Zookeeper Atomic Broadcast](zab/README.md)
     - raft(*https://raft.github.io/raft.pdf*) ... 
 

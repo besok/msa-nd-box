@@ -1,6 +1,6 @@
 #### intro:
 The Saga pattern is an architectural pattern which provides an alternative approach to big and long running ACID transactions.\
-It takes a business process and breaks it up into small isolated steps – each of them with its own transaction.\
+It takes a business process and breaks it up into small isolated steps – each of them with its own transaction./
 The overall consistency is provided by manually reverting past actions.
 
 there are 2 types of saga:
@@ -13,8 +13,8 @@ there are 2 types of saga:
 There are three services involved to saga(creator-service,logger-service,validator-service).
 
 General funcitonality is provided by the packages: 
-- [logic](..\discovery\src\main\java\ie\home\msa\sandbox\saga)
-- [messages](..\messages\src\main\java\ie\home\msa\saga)
+- [logic](../discovery/src/main/java/ie/home/msa/sandbox/saga)
+- [messages](../messages/src/main/java/ie/home/msa/saga)
 
 The saga message involves all appropriate information for orchestration:
 ```

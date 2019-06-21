@@ -11,7 +11,7 @@ This implementation does it through a file system.
 - log aggregator should collect all logs together by timestamp regarding timestamp  
 ---
 #### notes:
-- client logic in [LogAggregator](..\discovery\src\main\java\ie\home\msa\sandbox\discovery\client\LogAggregator.java)
+- client logic in [LogAggregator](../discovery/src/main/java/ie/home/msa/sandbox/discovery/client/LogAggregator.java)
  - checks logs every 5 sec
  - by default the variable log-service-name is 'none'. In that case logs is not collected
 - it uses simple implementation of file storage.

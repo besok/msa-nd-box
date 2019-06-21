@@ -8,14 +8,14 @@ Most of all patterns provide common principle to communicate **client | worker |
 every service while starting to send a registration request to admin service. Also server send his properties to config interacting.
 It can be useful if there is more than one instance and it passes through a load balanced strategy
 Then whoever wanting to interact with the microservice should ask admin-service to give the address
-- [DiscoveryClient#registration](\src\main\java\ie\home\msa\sandbox\discovery\client\DiscoveryClient.java)
-- common approach on admin side it is to process all config properties through [Service registrator](\discovery\src\main\java\ie\home\msa\sandbox\discovery\server\ServiceRegistrator.java)
-  - and more precisely is [ServiceRegistrationHandler](\src\main\java\ie\home\msa\sandbox\discovery\server\ServiceRegistrationHandler.java) 
+- [DiscoveryClient#registration](src/main/java/ie/home/msa/sandbox/discovery/client/DiscoveryClient.java)
+- common approach on admin side it is to process all config properties through [Service registrator](discovery/src/main/java/ie/home/msa/sandbox/discovery/server/ServiceRegistrator.java)
+  - and more precisely is [ServiceRegistrationHandler](src/main/java/ie/home/msa/sandbox/discovery/server/ServiceRegistrationHandler.java) 
   
 #### persistence-storage
 admin service needs to save all coming information to persistent storage. For that, persistent file storage has been added.
 the common principle of this storage is classic key-value storage wherein a key is a file and values are lines of the file.
-- class [AbstractFileStorage](\src\main\java\ie\home\msa\sandbox\discovery\server\AbstractFileStorage.java) provides tha logic
+- class [AbstractFileStorage](src/main/java/ie/home/msa/sandbox/discovery/server/AbstractFileStorage.java) provides tha logic
   - it is thread safe(i presume :) )
   - to inherit needs to implement 3 methods:
          - transform values to strings(to save to a text file line by line)
@@ -88,12 +88,12 @@ the basic approach to do that is a health check process:
  - every service returns metric message
  - based on this message the admin service decides what to do next
 
-- on admin side it is provided by [MetricHandler](\src\main\java\ie\home\msa\sandbox\discovery\server\MetricHandler.java)
-- on client side it is provided by [HMetrics](\src\main\java\ie\home\msa\sandbox\discovery\server\MetricHandler.java)
+- on admin side it is provided by [MetricHandler](src/main/java/ie/home/msa/sandbox/discovery/server/MetricHandler.java)
+- on client side it is provided by [HMetrics](src/main/java/ie/home/msa/sandbox/discovery/server/MetricHandler.java)
 
 the same approach suits close and init operations. Every server has endpoint to invoke init operations and destroy operations. When the endpoint is invoked all operations have being running.
-- on client side it is provided by implementing [InitializationOperation](\src\main\java\ie\home\msa\sandbox\discovery\client\InitializationOperation.java) and [DestroyOperation](\src\main\java\ie\home\msa\sandbox\discovery\client\DestroyOperation.java)
-- internally it is provided by [ApplicationRestarter](\src\main\java\ie\home\msa\sandbox\discovery\client\ApplicationRestarter.java)
+- on client side it is provided by implementing [InitializationOperation](src/main/java/ie/home/msa/sandbox/discovery/client/InitializationOperation.java) and [DestroyOperation](src/main/java/ie/home/msa/sandbox/discovery/client/DestroyOperation.java)
+- internally it is provided by [ApplicationRestarter](src/main/java/ie/home/msa/sandbox/discovery/client/ApplicationRestarter.java)
 
 #### circuit-breaker
 The basic idea for a circuit breaker is to be a proxy between a service and its invoker.\
@@ -115,8 +115,8 @@ public class ImportantService {
 }
 ```
 - the implementation on the client side by:
-   - [CircuitBreakerBeanPostProcessor](\src\main\java\ie\home\msa\sandbox\discovery\client\CircuitBreakerBeanPostProcessor.java),
-   - [CircuitBreakerHealth](\src\main\java\ie\home\msa\sandbox\discovery\client\CircuitBreakerHealth.java)
-   - [CircuitBreakerMethodStore](\src\main\java\ie\home\msa\sandbox\discovery\client\CircuitBreakerMethodStore.java)
+   - [CircuitBreakerBeanPostProcessor](src/main/java/ie/home/msa/sandbox/discovery/client/CircuitBreakerBeanPostProcessor.java),
+   - [CircuitBreakerHealth](src/main/java/ie/home/msa/sandbox/discovery/client/CircuitBreakerHealth.java)
+   - [CircuitBreakerMethodStore](src/main/java/ie/home/msa/sandbox/discovery/client/CircuitBreakerMethodStore.java)
 
 - admin side provides a new storage for that.
