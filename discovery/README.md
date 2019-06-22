@@ -102,15 +102,14 @@ If the service has some degradation in performance it should be disabled or term
 It can be achieved by measuring performance every invoke(in that library at least)
 - on the client side, it is provided by finding all methods marked @CircuitBreaker and proxying them by method measuring the time of executing
 - if the time more threshold the admin server should react
-```
+```java
 @Service
 public class ImportantService {
- ... 
-    @CircuitBreaker(1) // 1 sec
+    @CircuitBreaker(2) // 2 sec
     public int importantOperation(){
-        ...
+        // implementation
     }
- ...   
+ 
 }
 ```
 - the implementation on the client side by:

@@ -1,11 +1,5 @@
 package ie.home.msa.sandbox.raft;
 
-import ie.home.msa.messages.Message;
-import ie.home.msa.messages.ZElectionMessage;
-import ie.home.msa.zab.ZNotification;
-import ie.home.msa.zab.ZVote;
-
-import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -26,9 +20,12 @@ public class RaftUtils {
     }
 
 
-
-    static int quorumSize(int sizeEnsemble){
+    static int quorumSize(int sizeEnsemble) {
         return sizeEnsemble % 2 == 0 ? sizeEnsemble / 2 + 1 : sizeEnsemble / 2;
+    }
+
+    static boolean isQ(int currentSize, int qs) {
+        return currentSize >= qs;
     }
 
 }
