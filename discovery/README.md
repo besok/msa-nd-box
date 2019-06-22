@@ -97,8 +97,7 @@ the same approach suits close and init operations. Every server has endpoint to 
 
 #### circuit-breaker
 The basic idea for a circuit breaker is to be a proxy between a service and its invoker.\
-If the service has some degradation in performance it should be disabled or terminated or restarted or whatever.\
-If the service has some degradation in performance it should be disabled or terminated or restarted what ever. 
+If the service has some degradation in performance it should be disabled or terminated or restarted or whatever.
 
 It can be achieved by measuring performance every invoke(in that library at least)
 - on the client side, it is provided by finding all methods marked @CircuitBreaker and proxying them by method measuring the time of executing
