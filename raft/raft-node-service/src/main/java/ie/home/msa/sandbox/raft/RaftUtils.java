@@ -21,7 +21,7 @@ public class RaftUtils {
 
 
     static int quorumSize(int sizeEnsemble) {
-        return sizeEnsemble % 2 == 0 ? sizeEnsemble / 2 + 1 : sizeEnsemble / 2;
+        return sizeEnsemble / 2 + 1 ;
     }
 
     static boolean isQ(int currentSize, int qs) {

@@ -24,4 +24,15 @@ public class VoteResult {
         this.term = term;
         this.vote = vote;
     }
+
+    public VoteResult() {
+    }
+
+    @Override
+    public String toString() {
+        return "VoteResult{" +
+                "term=" + term +
+                ", vote=" + vote +
+                '}';
+    }
 }

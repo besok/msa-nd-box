@@ -1,5 +1,6 @@
 package ie.home.msa.sandbox.raft;
 
+import ie.home.msa.messages.RaftAppendEntriesMessage;
 import ie.home.msa.messages.RaftRequestVoteMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,5 +21,11 @@ public class Controller {
     public VoteResult processMessage(@RequestBody RaftRequestVoteMessage message) {
         return processor.processVoteMessage(message);
     }
+
+    @PostMapping(path = "/append")
+    public VoteResult processAppendMessage(@RequestBody RaftAppendEntriesMessage message) {
+        return processor.processAppendMessage(message);
+    }
+
 
 }
