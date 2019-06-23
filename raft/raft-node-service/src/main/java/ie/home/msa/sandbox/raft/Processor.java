@@ -138,11 +138,15 @@ public class Processor implements InitializationOperation {
             timer.reset();
             timer.watch();
             currentTerm.set(term);
+            votedFor.set(cId);
             flag = true;
         } else {
             int id = votedFor.get();
             LogEntry l = last();
             flag = (id == -1 || id == cId) && lIdx >= l.getIdx() && lTerm >= l.getTerm();
+            if(flag){
+                votedFor.set(cId);
+            }
         }
 
         log.info(" returned result: flag:{},term:{}", flag, cT);
@@ -176,8 +180,8 @@ public class Processor implements InitializationOperation {
                         if (RaftUtils.isQ(count, qs)) {
                             state.set(State.Leader);
                             timer.stopWatch();
-                            log.info("this node is leader: {} ", currentTerm.get());
                             votedFor.set(ownId.get());
+                            log.info("this node is leader: {} ", currentTerm.get());
                             break common;
                         }
                     }
