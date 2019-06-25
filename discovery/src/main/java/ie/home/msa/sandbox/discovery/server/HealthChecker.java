@@ -40,7 +40,7 @@ public class HealthChecker {
 
     @PostConstruct
     public void init() {
-        executorService.scheduleAtFixedRate(checkStatus(), 3, 3, TimeUnit.SECONDS);
+        executorService.scheduleAtFixedRate(checkStatus(), 3, 1, TimeUnit.SECONDS);
     }
 
     private Runnable checkStatus() {
