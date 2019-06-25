@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 @Slf4j
 public class Processor implements InitializationOperation {
 
-    private AtomicInteger ownId;
     private Timer timer;
     private final DiscoveryClient client;
 
@@ -43,7 +42,7 @@ public class Processor implements InitializationOperation {
 
     @Autowired
     public Processor(DiscoveryClient client) {
-        ownId = new AtomicInteger(-1);
+
         votedFor = new AtomicInteger(-1);
         commitIdx = new AtomicInteger(0);
         voteCount = new AtomicInteger(0);
@@ -135,8 +134,7 @@ public class Processor implements InitializationOperation {
         int cT = currentTerm.get();
         if (term > cT) {
             setState(State.Follower);
-            timer.reset();
-            timer.watch();
+            timer.restart();
             currentTerm.set(term);
             votedFor.set(cId);
             flag = true;
@@ -144,7 +142,7 @@ public class Processor implements InitializationOperation {
             int id = votedFor.get();
             LogEntry l = last();
             flag = (id == -1 || id == cId) && lIdx >= l.getIdx() && lTerm >= l.getTerm();
-            if(flag){
+            if (flag) {
                 votedFor.set(cId);
             }
         }
@@ -180,7 +178,7 @@ public class Processor implements InitializationOperation {
                         if (RaftUtils.isQ(count, qs)) {
                             state.set(State.Leader);
                             timer.stopWatch();
-                            votedFor.set(ownId.get());
+                            votedFor.set(RaftUtils.find(client.getServiceAddress(), client.getNodes()));
                             log.info("this node is leader: {} ", currentTerm.get());
                             break common;
                         }
@@ -199,15 +197,16 @@ public class Processor implements InitializationOperation {
     @Override
     public Boolean operate() {
         timer.watch();
-        ownId.set(RaftUtils.find(client.getServiceAddress(), client.getNodes()));
         timer.leaderWatch();
         return true;
     }
 
 
     private void setState(State state) {
-        log.info("prev state:{}, next state {}", this.state.get(), state);
-        this.state.set(state);
+        if (this.state.get() != state) {
+            log.info("prev state:{}, next state {}", this.state.get(), state);
+            this.state.set(state);
+        }
     }
 
 
@@ -235,6 +234,10 @@ public class Processor implements InitializationOperation {
             timer.set(0);
         }
 
+        public void restart() {
+            this.reset();
+            this.watch();
+        }
 
         void watch() {
             if (turnFlag.compareAndSet(false, true)) {
