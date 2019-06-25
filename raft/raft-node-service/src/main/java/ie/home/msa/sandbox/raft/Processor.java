@@ -15,10 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -165,29 +162,35 @@ public class Processor implements InitializationOperation {
                     currentTerm.get(), last().getIdx(), last().getTerm()
             );
             log.info("build request:{}", req);
-            try {
-                ResponseEntity<VoteResult> resp =
-                        client.getRestTemplate().postForEntity(
-                                "http://" + address + "/election",
-                                req, VoteResult.class);
-                if (resp.getStatusCode().is2xxSuccessful()) {
-                    VoteResult vr = resp.getBody();
-                    if (vr.isVote()) {
-                        int count = voteCount.incrementAndGet();
-                        log.info("vote count : {} ", count);
-                        if (RaftUtils.isQ(count, qs)) {
-                            state.set(State.Leader);
-                            timer.stopWatch();
-                            votedFor.set(RaftUtils.find(client.getServiceAddress(), client.getNodes()));
-                            log.info("this node is leader: {} ", currentTerm.get());
-                            break common;
-                        }
+            Optional<VoteResult> resp = post(address, "election", req, VoteResult.class);
+            if (resp.isPresent()) {
+                VoteResult vr = resp.get();
+                if (vr.isVote()) {
+                    int count = voteCount.incrementAndGet();
+                    log.info("vote count : {} ", count);
+                    if (RaftUtils.isQ(count, qs)) {
+                        state.set(State.Leader);
+                        timer.stopWatch();
+                        votedFor.set(RaftUtils.find(client.getServiceAddress(), client.getNodes()));
+                        log.info("this node is leader: {} ", currentTerm.get());
+                        break common;
                     }
                 }
-            } catch (Exception ex) {
-                log.error("ex:", ex);
             }
+
         }
+    }
+
+    private <I, O> Optional<O> post(String address, String postfix, I req, Class<O> clazz) {
+        try {
+            ResponseEntity<O> resp = client.getRestTemplate().postForEntity("http://" + address + "/" + postfix, req, clazz);
+            if (resp.getStatusCode().is2xxSuccessful()) {
+                return Optional.ofNullable(resp.getBody());
+            }
+        } catch (Exception ex) {
+            log.error("ex:", ex);
+        }
+        return Optional.empty();
     }
 
     private LogEntry last() {
