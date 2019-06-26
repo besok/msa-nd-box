@@ -39,7 +39,6 @@ public class Processor implements InitializationOperation {
 
     @Autowired
     public Processor(DiscoveryClient client) {
-
         votedFor = new AtomicInteger(-1);
         commitIdx = new AtomicInteger(0);
         voteCount = new AtomicInteger(0);
@@ -55,9 +54,9 @@ public class Processor implements InitializationOperation {
         return () -> {
             currentTerm.incrementAndGet();
             voteCount.set(1);
-            state.set(State.Follower);
             votedFor.set(-1);
             timer.reset();
+            setState(State.Follower);
             election();
             return true;
         };
@@ -71,53 +70,54 @@ public class Processor implements InitializationOperation {
                 String servAddr = client.getServiceAddress();
                 int id = RaftUtils.find(servAddr, nodes);
                 String[] addresses = RaftUtils.filter(servAddr, nodes);
-                int qs = RaftUtils.quorumSize(nodes.length);
                 for (String address : addresses) {
                     Entry[] entries = new Entry[0];
                     RaftAppendEntriesMessage req = RaftAppendEntriesMessageBuilder.build(
-                            servAddr, currentTerm.get(), id, 0, 0, 0, entries
-                    );
+                            servAddr, currentTerm.get(), id, 0, 0, 0, entries);
                     log.info("build append request:{}", req);
-                    try {
-                        ResponseEntity<VoteResult> resp =
-                                client.getRestTemplate().postForEntity(
-                                        "http://" + address + "/append",
-                                        req, VoteResult.class);
-                        if (resp.getStatusCode().is2xxSuccessful()) {
-                            VoteResult vr = resp.getBody();
-                            log.info(" log : {}", vr);
-                        }
-                    } catch (Exception ex) {
-                        log.error("ex:", ex);
-                    }
+                    post(address, "append", req, VoteResult.class)
+                            .ifPresent(vr -> log.info(" log : {}", vr));
                 }
             }
             return true;
-        };
+        }
+
+                ;
     }
 
 
     public VoteResult processAppendMessage(RaftAppendEntriesMessage message) {
         AppendEntries av = message.getBody();
-        log.info("coming append request {}", av);
         int term = av.getTerm();
         int lId = av.getLeaderId();
         int cT = currentTerm.get();
-        if (cT > term) {
-            return new VoteResult(term, false);
+
+        int pIdx = av.getPevLogIdx();
+        int pTerm = av.getPrevLogTerm();
+        LogEntry l = last();
+        boolean logOk = pIdx == 0 || (pIdx > 0 && pIdx <= l.getIdx() && pTerm == l.getTerm());
+
+        boolean res = false;
+        if (term < cT) {
+
         } else if (term > cT) {
             setState(State.Follower);
             timer.reset();
             currentTerm.set(term);
             votedFor.set(lId);
-            return new VoteResult(term, false);
+            res = true;
         } else {
-            setState(State.Follower);
-            timer.reset();
+            if (state.get() == State.Candidate) {
+                setState(State.Follower);
+            } else if (state.get() == State.Follower && logOk) {
+                res = true;
+            }
             votedFor.set(lId);
-            return new VoteResult(term, false);
+            timer.reset();
         }
+        log.info("append request:{} for ct:{}", av, cT);
 
+        return new VoteResult(term, res);
     }
 
     public VoteResult processVoteMessage(RaftRequestVoteMessage message) {
@@ -155,7 +155,6 @@ public class Processor implements InitializationOperation {
         int qs = RaftUtils.quorumSize(nodes.length);
         log.info("start election ... {}, qs:{}", Arrays.toString(addresses), qs);
 
-        common:
         for (String address : addresses) {
             RaftRequestVoteMessage req = RaftRequestVoteMessageBuilder.build(
                     servAddr, RaftUtils.find(servAddr, nodes),
@@ -173,7 +172,7 @@ public class Processor implements InitializationOperation {
                         timer.stopWatch();
                         votedFor.set(RaftUtils.find(client.getServiceAddress(), client.getNodes()));
                         log.info("this node is leader: {} ", currentTerm.get());
-                        break common;
+                        break;
                     }
                 }
             }
@@ -205,11 +204,17 @@ public class Processor implements InitializationOperation {
     }
 
 
-    private void setState(State state) {
+    private boolean setState(State state) {
         if (this.state.get() != state) {
             log.info("prev state:{}, next state {}", this.state.get(), state);
             this.state.set(state);
+            return true;
         }
+        return false;
+    }
+
+    public void processCommand(String command) {
+        int lId = votedFor.get();
     }
 
 
@@ -218,26 +223,26 @@ public class Processor implements InitializationOperation {
         private final int threshold;
         private final int leaderPause;
 
-        private AtomicInteger timer;
+        private AtomicInteger countDown;
 
         private Supplier<Boolean> electionAction;
         private Supplier<Boolean> leaderAction;
 
         Timer(Supplier<Boolean> action, Supplier<Boolean> leaderAction) {
-            this.threshold = new Random().nextInt(50) * 10 + 500;
+            this.threshold = new Random().nextInt(50) * 10 + 500; // ~ 0.5-1 sec
             this.turnFlag = new AtomicBoolean(false);
-            this.timer = new AtomicInteger(0);
+            this.countDown = new AtomicInteger(0);
             this.electionAction = action;
             this.leaderAction = leaderAction;
-            log.info(" thershold:{},", threshold);
+            log.info(" threshold:{},", threshold);
             leaderPause = 100;
         }
 
-        public void reset() {
-            timer.set(0);
+        void reset() {
+            countDown.set(0);
         }
 
-        public void restart() {
+        void restart() {
             this.reset();
             this.watch();
         }
@@ -247,8 +252,8 @@ public class Processor implements InitializationOperation {
                 CompletableFuture.runAsync(() -> {
                     int step = 30;
                     while (turnFlag.get()) {
-                        if (timer.addAndGet(step) > threshold) {
-                            log.info("threshold is over : {} > {}", timer.get(), threshold);
+                        if (countDown.addAndGet(step) > threshold) {
+                            log.info("threshold is over : {} > {}", countDown.get(), threshold);
                             if (electionAction.get()) sleep(step);
                         } else sleep(step);
                     }
@@ -269,7 +274,7 @@ public class Processor implements InitializationOperation {
             }
         }
 
-        public void leaderWatch() {
+        void leaderWatch() {
             CompletableFuture.runAsync(() -> {
                 while (true) {
                     if (leaderAction.get()) {

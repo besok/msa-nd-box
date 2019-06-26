@@ -28,4 +28,9 @@ public class Controller {
     }
 
 
+    @PostMapping(path = "/command")
+    public void takeCommnad(@RequestBody String command){
+        processor.processCommand(command);
+    }
+
 }
