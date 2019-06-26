@@ -21,6 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 @Component
 @Slf4j
@@ -34,6 +37,10 @@ public class Processor implements InitializationOperation {
     private AtomicReference<State> state;
     private AtomicInteger votedFor;
     private List<LogEntry> logs;
+
+    private int[] nextIdx;
+    private int[] matchIdx;
+
 
     private AtomicInteger voteCount;
 
@@ -72,11 +79,11 @@ public class Processor implements InitializationOperation {
                 String[] addresses = RaftUtils.filter(servAddr, nodes);
                 for (String address : addresses) {
                     Entry[] entries = new Entry[0];
-                    RaftAppendEntriesMessage req = RaftAppendEntriesMessageBuilder.build(
-                            servAddr, currentTerm.get(), id, 0, 0, 0, entries);
+                    RaftAppendEntriesMessage req =
+                            RaftAppendEntriesMessageBuilder.build(
+                                    servAddr, currentTerm.get(), id, 0, 0, 0, entries);
                     log.info("build append request:{}", req);
-                    post(address, "append", req, VoteResult.class)
-                            .ifPresent(vr -> log.info(" log : {}", vr));
+                    post(address, "append", req, VoteResult.class).ifPresent(vr -> log.info(" log : {}", vr));
                 }
             }
             return true;
@@ -95,7 +102,7 @@ public class Processor implements InitializationOperation {
         int pIdx = av.getPevLogIdx();
         int pTerm = av.getPrevLogTerm();
         LogEntry l = last();
-        boolean logOk = pIdx == 0 || (pIdx > 0 && pIdx <= l.getIdx() && pTerm == l.getTerm());
+        boolean logOk = pIdx <= 0 || (pIdx <= l.getIdx() && pTerm == l.getTerm());
 
         boolean res = false;
         if (term < cT) {
@@ -110,7 +117,24 @@ public class Processor implements InitializationOperation {
             if (state.get() == State.Candidate) {
                 setState(State.Follower);
             } else if (state.get() == State.Follower && logOk) {
+                int index = ++pIdx;
+
+                int len = av.getEntries().length;
+                if (len == 0 || (logs.size() >= index && av.getEntries()[0].getTerm() == last().getTerm())) {
+                    commitIdx.set(av.getCommitIdx());
+                } else {
+                    if (logs.size() >= index) {
+                        if (logs.get(index).getTerm() != av.getEntries()[0].getTerm()) {
+                            logs = new ArrayList<>(logs.subList(0, index));
+                        }
+                        logs.addAll(Stream.of(av.getEntries())
+                                .map(e -> new LogEntry(e.getTerm(), e.getIdx(), e.getCommand()))
+                                .collect(toList()));
+                    }
+                }
+
                 res = true;
+
             }
             votedFor.set(lId);
             timer.reset();
@@ -172,6 +196,7 @@ public class Processor implements InitializationOperation {
                         timer.stopWatch();
                         votedFor.set(RaftUtils.find(client.getServiceAddress(), client.getNodes()));
                         log.info("this node is leader: {} ", currentTerm.get());
+
                         break;
                     }
                 }
@@ -200,6 +225,16 @@ public class Processor implements InitializationOperation {
     public Boolean operate() {
         timer.watch();
         timer.leaderWatch();
+        String[] nodes = client.getNodes();
+        int len = nodes.length;
+        matchIdx = new int[len];
+        nextIdx = new int[len];
+
+        for (int i = 0; i < matchIdx.length; i++) {
+            matchIdx[i] = 1;
+            nextIdx[i] = matchIdx[i] + 1;
+        }
+
         return true;
     }
 
@@ -213,8 +248,37 @@ public class Processor implements InitializationOperation {
         return false;
     }
 
-    public void processCommand(String command) {
+    public void processCommand(Integer command) {
+        String[] nodes = client.getNodes();
+        String servAddr = client.getServiceAddress();
+        int id = RaftUtils.find(servAddr, nodes);
         int lId = votedFor.get();
+        if (lId != id) {
+            if (lId > 0) {
+                post(nodes[lId], "command", command, Void.class).ifPresent(v -> log.info("message redirected"));
+            } else {
+                log.error("lost message {}", command);
+            }
+        } else {
+            logs.add(new LogEntry(currentTerm.get(), 0, command));
+            for (int i = 0; i < nodes.length; i++) {
+                String addr = nodes[i];
+                int nxIdx = this.nextIdx[i];
+                int prevLogIdx = --nxIdx;
+                int prevLogTerm = prevLogIdx > 0 ? logs.get(prevLogIdx).getTerm() : 0;
+                int le = Integer.min(logs.size(), nxIdx);
+                Entry[] entries = logs.subList(nxIdx, le).stream()
+                        .map(l -> new Entry(l.getTerm(), l.getIdx(), l.getCommand()))
+                        .toArray(Entry[]::new);
+                int min = Integer.min(commitIdx.get(), le);
+                RaftAppendEntriesMessage req =
+                        RaftAppendEntriesMessageBuilder.build(
+                                servAddr, currentTerm.get(), id, prevLogIdx,prevLogTerm, min, entries);
+                log.info("build append request:{}", req);
+                post(addr, "append", req, VoteResult.class).ifPresent(vr -> log.info(" log : {}", vr));
+
+            }
+        }
     }
 
 

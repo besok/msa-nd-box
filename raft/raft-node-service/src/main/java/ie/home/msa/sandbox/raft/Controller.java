@@ -29,7 +29,7 @@ public class Controller {
 
 
     @PostMapping(path = "/command")
-    public void takeCommnad(@RequestBody String command){
+    public void takeCommand(@RequestBody Integer command){
         processor.processCommand(command);
     }
 
