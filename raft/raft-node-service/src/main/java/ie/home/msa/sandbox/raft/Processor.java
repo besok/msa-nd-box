@@ -20,10 +20,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @Component
 @Slf4j
@@ -52,7 +55,6 @@ public class Processor implements InitializationOperation {
         state = new AtomicReference<>(State.Follower);
         currentTerm = new AtomicInteger(0);
         logs = new ArrayList<>();
-        logs.add(new LogEntry(0, 0));
         this.client = client;
         timer = new Timer(electionAction(), leaderAction(client));
     }
@@ -76,14 +78,34 @@ public class Processor implements InitializationOperation {
                 String[] nodes = client.getNodes();
                 String servAddr = client.getServiceAddress();
                 int id = RaftUtils.find(servAddr, nodes);
-                String[] addresses = RaftUtils.filter(servAddr, nodes);
-                for (String address : addresses) {
-                    Entry[] entries = new Entry[0];
-                    RaftAppendEntriesMessage req =
-                            RaftAppendEntriesMessageBuilder.build(
-                                    servAddr, currentTerm.get(), id, 0, 0, 0, entries);
-                    log.info("build append request:{}", req);
-                    post(address, "append", req, VoteResult.class).ifPresent(vr -> log.info(" log : {}", vr));
+                for (int i = 0; i < nodes.length; i++) {
+                    if (i != id) {
+                        int nIdx = --this.nextIdx[i];
+                        int prevLogTerm = nIdx > 0 ? logs.get(nIdx).getTerm() : 0;
+                        String address = nodes[i];
+                        Entry[] entries = new Entry[0];
+                        RaftAppendEntriesMessage req =
+                                RaftAppendEntriesMessageBuilder.build(
+                                        servAddr,
+                                        currentTerm.get(), id,
+                                        nIdx, prevLogTerm, commitIdx.get(), entries);
+                        log.info("build append request:{}", req);
+                        Optional<VoteResult> rOp = post(address, "append", req, VoteResult.class);
+                        if(rOp.isPresent()) {
+                            VoteResult vr = rOp.get();
+                            log.info(" log : {}", vr);
+                            if (vr.getTerm() == currentTerm.get()) {
+                                if (vr.isVote()) {
+                                    nextIdx[i]++;
+                                    matchIdx[i]++;
+                                } else {
+                                    matchIdx[i] = Integer.max(matchIdx[i] - 1, 1);
+                                }
+
+                                setNewCommitIdx(matchIdx);
+                            }
+                        }
+                    }
                 }
             }
             return true;
@@ -218,8 +240,9 @@ public class Processor implements InitializationOperation {
     }
 
     private LogEntry last() {
-        return logs.get(logs.size() - 1);
+        return logs.isEmpty() ? new LogEntry(0, 0, 0) : logs.get(logs.size() - 1);
     }
+
 
     @Override
     public Boolean operate() {
@@ -231,9 +254,9 @@ public class Processor implements InitializationOperation {
         nextIdx = new int[len];
 
         for (int i = 0; i < matchIdx.length; i++) {
-            matchIdx[i] = 1;
             nextIdx[i] = matchIdx[i] + 1;
         }
+
 
         return true;
     }
@@ -273,14 +296,50 @@ public class Processor implements InitializationOperation {
                 int min = Integer.min(commitIdx.get(), le);
                 RaftAppendEntriesMessage req =
                         RaftAppendEntriesMessageBuilder.build(
-                                servAddr, currentTerm.get(), id, prevLogIdx,prevLogTerm, min, entries);
+                                servAddr, currentTerm.get(), id, prevLogIdx, prevLogTerm, min, entries);
                 log.info("build append request:{}", req);
-                post(addr, "append", req, VoteResult.class).ifPresent(vr -> log.info(" log : {}", vr));
+                Optional<VoteResult> rOp = post(addr, "append", req, VoteResult.class);
+                if(rOp.isPresent()) {
+                    VoteResult vr = rOp.get();
+                    log.info(" log : {}", vr);
+                    if (vr.getTerm() == currentTerm.get()) {
+                        if (vr.isVote()) {
+                            nextIdx[i]++;
+                            matchIdx[i]++;
+                        } else {
+                            matchIdx[i] = Integer.max(matchIdx[i] - 1, 1);
+                        }
 
+                        setNewCommitIdx(matchIdx);
+                    }
+                }
             }
         }
     }
 
+    protected void setNewCommitIdx(int[] matchIdx) {
+        int qs = RaftUtils.quorumSize(matchIdx.length);
+        IntStream.of(matchIdx)
+                .boxed()
+                .collect(toMap(e -> e, Function.identity()))
+                .entrySet().stream()
+                .max((a, b) -> {
+                    Integer l = a.getValue();
+                    Integer r = b.getValue();
+                    if (l.equals(r)) {
+                        return a.getKey() - b.getKey();
+                    } else {
+                        return l - r;
+                    }
+                })
+                .ifPresent(e -> {
+                    Integer k = e.getKey();
+                    Integer v = e.getValue();
+                    if (v >= qs) {
+                        commitIdx.set(k);
+                    }
+                });
+    }
 
     class Timer {
         private AtomicBoolean turnFlag;
