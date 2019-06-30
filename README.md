@@ -78,5 +78,5 @@ This implementation does it through a file system.
 ### consensus protocols
 Active-passive replication for leader/followers system
 - [Zookeeper Atomic Broadcast](zab/README.md)
-- [Raft consensus protocol]((zab/README.md))
+- [Raft consensus protocol](raft/README.md)
 
