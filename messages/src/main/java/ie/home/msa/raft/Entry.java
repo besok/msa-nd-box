@@ -37,4 +37,13 @@ public class Entry {
     public void setCommand(int command) {
         this.command = command;
     }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "term=" + term +
+                ", idx=" + idx +
+                ", command=" + command +
+                '}';
+    }
 }

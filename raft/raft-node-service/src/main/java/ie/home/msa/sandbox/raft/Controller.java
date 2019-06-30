@@ -3,17 +3,20 @@ package ie.home.msa.sandbox.raft;
 import ie.home.msa.messages.RaftAppendEntriesMessage;
 import ie.home.msa.messages.RaftRequestVoteMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
+
 @RestController
 public class Controller {
 
-    private final Processor processor;
+    private final RaftProcessor processor;
 
     @Autowired
-    public Controller(Processor processor) {
+    public Controller(RaftProcessor processor) {
         this.processor = processor;
     }
 
@@ -29,8 +32,26 @@ public class Controller {
 
 
     @PostMapping(path = "/command")
-    public void takeCommand(@RequestBody Integer command){
-        processor.processCommand(command);
+    public boolean takeCommand(@RequestBody Integer command) {
+        return processor.processCommand(command);
     }
+
+    @PostMapping(path = "/pulse")
+    public VoteResult heartBeat(@RequestBody HeartBeatMessage message) {
+        return processor.processPulse(message);
+    }
+
+
+    @GetMapping(path = "/state")
+    public String getState() {
+        return processor.getState().get().toString();
+    }
+
+    @GetMapping(path = "/log")
+    public String getLog() {
+        return Arrays.toString(processor.getLogs().toArray());
+    }
+
+
 
 }

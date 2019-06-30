@@ -1,0 +1,26 @@
+GET http://localhost:9000/services/raft-node-service/init
+Accept: application/json
+
+###
+
+GET http://localhost:9000/services/all/raft-node-service
+Accept: application/json
+
+###
+
+GET http://10.0.75.1:56831/state
+Accept: application/json
+
+###
+
+GET http://10.0.75.1:63344/log
+Accept: application/json
+
+###
+
+POST http://10.0.75.1:62856/command
+Content-Type: application/json
+
+"1"
+
+###
