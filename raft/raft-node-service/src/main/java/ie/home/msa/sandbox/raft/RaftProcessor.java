@@ -24,6 +24,10 @@ import java.util.function.Supplier;
 
 import static ie.home.msa.sandbox.raft.RaftProcessor.State.*;
 
+// todo change to real impl - now heart beat it is separate message, but in real impl it is appen mes.
+//  On the one hand it is used as heartbeat but on the other hand it is supposed as a sync log message
+//  and separating append message up i lost this func
+
 @Component
 @Slf4j
 public class RaftProcessor implements InitializationOperation {
