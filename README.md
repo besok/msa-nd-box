@@ -5,6 +5,7 @@ The major communication channel is an HTTP focused on async communication(the an
 Common logic is provided by [discovery project](/discovery).
 
 ![logo][download.png]
+
 ---
 
 ### [health + metrics](discovery/README.md#health-metrics)
