@@ -4,6 +4,7 @@ It based on spring boot/web, java stack.
 The major communication channel is an HTTP focused on async communication(the answer is returned immediately).
 Common logic is provided by [discovery project](/discovery).
 
+![logo][download.png]
 ---
 
 ### [health + metrics](discovery/README.md#health-metrics)
